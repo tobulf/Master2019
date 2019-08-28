@@ -1,0 +1,7 @@
+#Ignore debug Folder
+**/Debug
+**/build
+#Ignore Xml files:
+*.xml
+#ignore Projectfiles
+*.cppproj
