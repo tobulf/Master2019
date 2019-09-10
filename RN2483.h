@@ -105,24 +105,34 @@ class RN2483: public LoRa_COM {
 	 */
 	bool set_DR(uint8_t DR);
 	/**
+	 * @brief Set duty cycle for the device according to dcycle=(100/x)-1 (x < 1% per EU regulation).
+	 * 
+	 * @param channel
+	 * @param dcycle
+	 * @return true
+	 * @return false
+	 */
+	bool set_duty_cycle(uint8_t channel, uint16_t dcycle);
+	/**
 	 * @brief Set the size of receive window 1.
 	 * 
 	 * @param milliseconds 
 	 * @return true 
 	 * @return false 
 	 */
+
 	bool set_RX_window_size(uint16_t milliseconds);
 	
 	
 	/**
-	 * @brief Transmitt a String of data with a specific port(1-255).
+	 * @brief Transmit a String of data with a specific port(1-255).
 	 * 
 	 * @param data 
 	 * @param port
 	 * @return String 
 	 */
 	
-	String TX_bytes(String data, int port);
+	String TX_string(String data, uint8_t port);
 	
 
 	private:

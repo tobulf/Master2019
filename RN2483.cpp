@@ -142,6 +142,12 @@ bool RN2483::set_DR(uint8_t DR){
 	return assert_response(get_answer());
 }
 
+bool RN2483::set_duty_cycle(uint8_t channel, uint16_t dcycle){
+	send_command(String("mac set ch dcycle ")+=String(channel)+=String(" ")+=String(dcycle));
+	bool response = assert_response(get_answer()); 
+	send_command("mac save");
+	return response && assert_response(get_answer());
+};
 
 bool RN2483::set_RX_window_size(uint16_t milliseconds){
 	send_command(String("mac set rxdelay1 ")+=String(milliseconds));
@@ -169,12 +175,13 @@ String RN2483::char_to_hex(uint8_t character){
 };
 
 
-String RN2483::TX_bytes(String data, int port){
+String RN2483::TX_string(String data, uint8_t port){
 	String hex_data;
+	uint8_t port_no = port;
 	for (uint8_t i = 0; i < data.length(); i++){
 		hex_data.concat(char_to_hex(data[i]));
 	}
-	send_command(String("mac tx uncnf ")+=String(port)+=String(" ")+=hex_data);
+	send_command(String("mac tx uncnf ")+=String(port_no)+=String(" ")+=hex_data);
 	String answer = get_answer();
 	/*Assert if the command was ok. */
 	//if (!assert_response(answer)) {
@@ -182,56 +189,53 @@ String RN2483::TX_bytes(String data, int port){
 	//}
 	/*Assert answer: */
 	//answer = get_answer();
-	
-	while (!(answer.startsWith("mac_rx") ^ answer.startsWith("mac_tx"))){
+	if (!(answer.startsWith("mac_rx") ^ answer.startsWith("mac_tx"))){
 		/**
 		 * \todo{What to return. can be something... or nothing. maybe internal variable is an option? or return NULL value if nothing?}
 		 * Each statement is shortened to save memory, such that i.e: not_joined is shortened to not. As there are no other responses that starts the same. See command RN2483 Command reference 2.4.2.
 		 */
-		
 		printf("%s\n", answer.c_str());
 		/* Chip is in Busy state*/
 		if(answer.startsWith("bus")){
-			return answer;
+			return false;
 		}
 		
 		/* Case: Not joined*/
 		else if(answer.startsWith("not")){
-			return answer;
+			return false;
 		}
 		
 		/* Case: no free channel*/
 		else if(answer.startsWith("no_free")){
-			printf("%s", "Duty Cycle exeeded");
 			return answer;
 		}
 		
 		/* Case: silent state*/
 		else if(answer.startsWith("sil")){
-			return answer;
+			return false;
 		}
 		
 		/* Case: Frame counter rolled over*/
 		else if(answer.startsWith("fra")){
-			return answer;
+			return false;
 		}
 
 		/* Mac is set to pause, not resumed*/
 		else if(answer.startsWith("mac_pa")){
-			return answer;
+			return false;
 		}
 		/* invalid data length, to long data to send(compared to current channel).*/
 		else if(answer.startsWith("invalid_da")){
-			return answer;
+			return false;
 		}
 		/* Transmission unsuccessful*/
 		else if(answer.startsWith("mac_er")){
-			return answer;
+			return false;
 		}
 		/* */
 		else {
+			return -1;
 		}
-		answer = get_answer();
 	}
 	return answer;
 };
