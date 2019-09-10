@@ -5,3 +5,5 @@
 *.xml
 #ignore Projectfiles
 *.cppproj
+#ignore main
+main.cpp
