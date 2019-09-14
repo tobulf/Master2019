@@ -56,7 +56,11 @@ void LoRa_COM::transmit(uint8_t data){
 	UDR0 = data;
 };
 
-
+void LoRa_COM::flush(void){
+	unsigned char dummy;
+	/* Flush the uart by reading untill buffer is empty */
+	while(UCSR0A & (1<<RXC))dummy = UDR0;
+};
 
 
 LoRa_COM::LoRa_COM(){

@@ -58,6 +58,11 @@ class LoRa_COM{
 	 * @param String command 
 	 */
 	void send_command(String command);
+	/**
+	 * @brief Flush UART.
+	 * 
+	 */
+	void flush(void);
 	private:
 };
 
