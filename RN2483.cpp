@@ -4,12 +4,14 @@
 
 
 /* Declare different baudrates:*/
-#define LORA_BAUD 57600UL
+#define LORA_BAUD 9600UL
 /* Declare UART Message terminators: */
 #define LF (uint8_t)10
 #define CR (uint8_t)13
-
-
+/* Macros */
+#define set_bit(reg, bit ) (reg |= (1 << bit))
+#define clear_bit(reg, bit ) (reg &= ~(1 << bit))
+#define test_bit(reg, bit ) (reg & (1 << bit))
 
 unsigned char LoRa_COM::receive(void){
 	/* Wait for data to be received:*/
@@ -56,14 +58,22 @@ void LoRa_COM::transmit(uint8_t data){
 	UDR0 = data;
 };
 
-void LoRa_COM::flush(void){
+void LoRa_COM::UART_flush(void){
 	unsigned char dummy;
-	/* Flush the uart by reading untill buffer is empty */
+	/* Flush the UART by reading untill buffer is empty */
 	while(UCSR0A & (1<<RXC))dummy = UDR0;
 };
 
 
 LoRa_COM::LoRa_COM(){
+	/* Set TXD0 to output */
+	DDRD = (1<<DDD1);
+	/* Set port low to enable AUTOBAUD */
+	clear_bit(PORTD, 1);
+	_delay_ms(10);
+	/* Reset TX pin */
+	DDRD = 0x00;
+	_delay_us(10);
 	/*Calculate ubbr: */
 	unsigned int ubrr = (F_CPU/(16*LORA_BAUD))-1U;
 	/*Set baud rate */
@@ -73,9 +83,12 @@ LoRa_COM::LoRa_COM(){
 	UCSR0B = (1<<RXEN)|(1<<TXEN);
 	/* Set frame format:  2stop bit, 8data*/
 	UCSR0C = (1<<USBS)|(3<<UCSZ0);
+	transmit(85);
+	transmit(85);
 };
 
 RN2483::RN2483(){
+	UART_flush();
 	send_command("sys reset");
 	/*Empty the buffer.*/
 	get_answer();

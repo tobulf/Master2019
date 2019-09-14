@@ -62,7 +62,7 @@ class LoRa_COM{
 	 * @brief Flush UART.
 	 * 
 	 */
-	void flush(void);
+	void UART_flush(void);
 	private:
 };
 
