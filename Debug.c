@@ -9,11 +9,11 @@
 #include "Debug.h"
 
 #ifndef F_CPU
-	#define F_CPU 12000000UL
+	#define F_CPU 1843200UL
 #endif
 
 #ifndef DEBUG_BAUD
-	#define DEBUG_BAUD 57600UL
+	#define DEBUG_BAUD 9600UL
 #endif
 
 
