@@ -15,3 +15,18 @@ SPI::SPI(){
 	SPCR0 = (1<<SPE)|(1<<MSTR)|(1<<SPR0);
 };
 
+
+void SPI::write(uint8_t data){
+	/* Start transmission */
+	SPDR0 = data;
+	/* Wait for transmission complete */
+	while(!(SPSR0 & (1<<SPIF)));
+}
+
+uint8_t SPI_read(){
+	/* Start transmission */
+	SPDR0 = 0x00;
+	/* Wait for transmission complete */
+	while(!(SPSR0 & (1<<SPIF)));
+	return SPDR0;
+}

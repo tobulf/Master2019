@@ -16,6 +16,7 @@ class SPI
 {
 	public:
 	SPI();
+	void write(uint8_t data);
 	protected:
 	private:
 };
