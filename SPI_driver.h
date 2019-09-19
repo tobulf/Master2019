@@ -11,12 +11,19 @@
 
 #include <avr/io.h>
 
+/* Handy macros: */
+#define set_bit(reg, bit ) (reg |= (1 << bit))
+#define clear_bit(reg, bit ) (reg &= ~(1 << bit))
+#define test_bit(reg, bit ) (reg & (1 << bit))
+
 
 class SPI
 {
 	public:
 	SPI();
 	void write(uint8_t data);
+	uint8_t read(void);
+	void chip_select(uint8_t select);
 	protected:
 	private:
 };

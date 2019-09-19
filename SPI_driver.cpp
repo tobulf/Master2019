@@ -6,13 +6,15 @@
  */ 
 
 #include "SPI_driver.h"
-
+extern "C" {
+	#include "Debug.h"
+};
 
 SPI::SPI(){
 	/* Set MOSI and SCK output, all others input */
-	DDRB = (1<<DDB5)|(1<<DDB7);
-	/* Enable SPI, Master, set clock rate fck/16 */
-	SPCR0 = (1<<SPE)|(1<<MSTR)|(1<<SPR0);
+	DDRB = (0<<DDB4) | (1<<DDB5)| (0<<DDB6) |(1<<DDB7);
+	/* Enable SPI, Master, set clock rate fck/4 */
+	SPCR0 = (1<<SPE)|(1<<MSTR)|(0<<SPR0);
 };
 
 
@@ -21,12 +23,25 @@ void SPI::write(uint8_t data){
 	SPDR0 = data;
 	/* Wait for transmission complete */
 	while(!(SPSR0 & (1<<SPIF)));
+	printf("%d \n", SPSR0);
 }
 
-uint8_t SPI_read(){
+uint8_t SPI::read(void){
 	/* Start transmission */
 	SPDR0 = 0x00;
 	/* Wait for transmission complete */
 	while(!(SPSR0 & (1<<SPIF)));
 	return SPDR0;
 }
+
+void SPI::chip_select(uint8_t select){
+	if(select){
+		set_bit(PORTB, PB4);
+	}
+	
+	else{
+		clear_bit(PORTB, PB4);
+	}
+};
+	
+	
