@@ -12,7 +12,7 @@
 #include <util/delay.h>
 #include <avr/io.h>
 
-enum led {YELLOW = 0, GREEN, RED};
+enum led {GREEN= 0, YELLOW, RED};
 
 
 class LED_driver
