@@ -63,8 +63,8 @@ void ADXL345::SetRegisterValue(unsigned char registerAddress,
 unsigned char registerValue)
 {
 chip_select(LOW);
-write(registerAddress);
-write(registerValue);
+transmit(registerAddress);
+transmit(registerValue);
 chip_select(HIGH);
 }
 
@@ -77,10 +77,10 @@ chip_select(HIGH);
 *******************************************************************************/
 unsigned char ADXL345::GetRegisterValue(unsigned char registerAddress){
 chip_select(LOW);
-write(0x80 + registerAddress);
-write(0);
-uint8_t data0 = read();
-uint8_t data1 = read();
+transmit(0x80 + registerAddress);
+transmit(0);
+uint8_t data0 = transmit(0);
+uint8_t data1 = transmit(0);
 chip_select(HIGH);
 return(data1);
 }
