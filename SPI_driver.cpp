@@ -9,7 +9,6 @@
 extern "C" {
 	#include "Debug.h"
 };
-
 SPI::SPI(){
 	/* Set MOSI and SCK output, all others input */
 	DDRB = (0<<DDB4) | (1<<DDB5)| (0<<DDB6) |(1<<DDB7);
@@ -17,18 +16,9 @@ SPI::SPI(){
 	SPCR0 = (1<<SPE)|(1<<MSTR)|(0<<SPR0);
 };
 
-
-void SPI::write(uint8_t data){
+uint8_t SPI::transmit(uint8_t data){
 	/* Start transmission */
 	SPDR0 = data;
-	/* Wait for transmission complete */
-	while(!(SPSR0 & (1<<SPIF)));
-	printf("%d \n", SPSR0);
-}
-
-uint8_t SPI::read(void){
-	/* Start transmission */
-	SPDR0 = 0x00;
 	/* Wait for transmission complete */
 	while(!(SPSR0 & (1<<SPIF)));
 	return SPDR0;

@@ -21,8 +21,7 @@ class SPI
 {
 	public:
 	SPI();
-	void write(uint8_t data);
-	uint8_t read(void);
+	uint8_t transmit(uint8_t data);
 	void chip_select(uint8_t select);
 	protected:
 	private:
