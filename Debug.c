@@ -9,11 +9,11 @@
 #include "Debug.h"
 
 #ifndef F_CPU
-	#define F_CPU 12000000UL
+	#define F_CPU 1843200UL
 #endif
 
 #ifndef DEBUG_BAUD
-	#define DEBUG_BAUD 57600UL
+	#define DEBUG_BAUD 9600UL
 #endif
 
 
@@ -33,18 +33,18 @@ FILE mystdout = FDEV_SETUP_STREAM(USART_TRANSMIT_printf, NULL, _FDEV_SETUP_RW);
 
 unsigned char USART_receive(void){
 	/* Wait for data to be received:*/
-	while ( !(UCSR1A & (1<<RXC)) );
+	while ( !(UCSR2A & (1<<RXC)) );
 	/*Return data from buffer:*/
-	return UDR1;
+	return UDR2;
 }
 
 
 
 void  USART_transmit( uint8_t data ){
 	/* Wait for empty transmit buffer:*/
-	while ( !( UCSR1A & (1<<UDRE)));
+	while ( !( UCSR2A & (1<<UDRE)));
 	/* Put data into buffer:*/
-	UDR1 = data;
+	UDR2 = data;
 }
 
 
@@ -63,12 +63,12 @@ void USART_init(unsigned int BR){
 	// Calculate ubbr:
 	unsigned int ubrr =(F_CPU / (16*DEBUG_BAUD))-1U;
 	/*Set baud rate */
-	UBRR1H = (unsigned char)(ubrr>>8);
-	UBRR1L = (unsigned char)ubrr;
+	UBRR2H = (unsigned char)(ubrr>>8);
+	UBRR2L = (unsigned char)ubrr;
 	/* Enable receiver and transmitter */
-	UCSR1B = (1<<RXEN)|(1<<TXEN);
+	UCSR2B = (1<<RXEN)|(1<<TXEN);
 	/* Set frame format:  2stop bit, 8data*/
-	UCSR1C = (1<<USBS)|(3<<UCSZ0);
+	UCSR2C = (1<<USBS)|(3<<UCSZ0);
 	stdout = &mystdout;
 	//stdin = &mystdout;
 }
