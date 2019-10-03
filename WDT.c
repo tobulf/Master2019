@@ -21,6 +21,12 @@ void WDT_off(void){
 	sei();
 };
 
+
+void WDT_INT_enable(){
+	WDTCSR &= ~(1<<WDE);
+	WDTCSR |= (1<<WDIE);
+};
+
 ISR(WDT_vect){
 	printf("%s", "watchdog timeout");
 	
