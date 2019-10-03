@@ -13,8 +13,8 @@
 #include <avr/interrupt.h> 
 #include "Debug.h"
 
-
 void WDT_off(void);
+void WDT_set_prescaler();
 void WDT_INT_enable();
 void WDT_INT_RST_enable();
 void WDT_RST_enable();
