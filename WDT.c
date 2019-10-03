@@ -27,14 +27,15 @@ void WDT_INT_enable(){
 	WDTCSR |= (1<<WDIE);
 };
 
-ISR(WDT_vect){
-	printf("%s", "watchdog timeout");
-	
+void WDT_INT_RST_enable(){
+	WDTCSR |= (1<<WDE);
+	WDTCSR |= (1<<WDIE);
 };
 
-ISR(_VECTOR(0)){
-	printf("%s", "watchdog reset");
-	
+
+ISR(WDT_vect){
+	printf("%s", "watchdog timeout");
 };
-	
+
+
 	

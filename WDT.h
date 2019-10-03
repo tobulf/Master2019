@@ -16,5 +16,6 @@
 
 void WDT_off(void);
 void WDT_INT_enable();
+void WDT_INT_RST_enable();
 
 #endif /* WDT_H_ */
