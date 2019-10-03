@@ -32,6 +32,12 @@ void WDT_INT_RST_enable(){
 	WDTCSR |= (1<<WDIE);
 };
 
+void WDT_RST_enable(){
+	WDTCSR  |= (1<<WDE);
+	WDTCSR &= ~(1<<WDIE);
+};
+
+
 
 ISR(WDT_vect){
 	printf("%s", "watchdog timeout");
