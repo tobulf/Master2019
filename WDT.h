@@ -9,9 +9,10 @@
 #ifndef WDT_H_
 #define WDT_H_
 
-#include "avr/wdt.h"
 #include <avr/interrupt.h> 
 #include "Debug.h"
+
+#define WDT_reset() __asm__ __volatile__ ("wdr")
 
 void WDT_off(void);
 void WDT_set_prescaler();

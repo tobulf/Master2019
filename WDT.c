@@ -7,10 +7,9 @@
 
 #include "WDT.h"
 
-
 void WDT_off(void){
 	cli();
-	wdt_reset();
+	WDT_reset();
 	/* Clear WDRF in MCUSR */
 	MCUSR &= ~(1<<WDRF);
 	/* Write logical one to WDCE and WDE */
@@ -23,12 +22,11 @@ void WDT_off(void){
 
 void WDT_set_prescaler(){
 	cli();
-	wdt_reset();
+	WDT_reset();
 	WDTCSR |= (1<<WDCE) | (1<<WDE);
-	WDTCSR = (1<<WDE) | (1<<WDP2) | (1<<WDP1) | (0<<WDP0);
+	WDTCSR = (1<<WDE) | (1<<WDP2) | (1<<WDP1) | (1<<WDP0);
 	sei();
 };
-
 
 void WDT_INT_enable(){
 	WDTCSR &= ~(1<<WDE);
@@ -44,12 +42,3 @@ void WDT_RST_enable(){
 	WDTCSR  |= (1<<WDE);
 	WDTCSR &= ~(1<<WDIE);
 };
-
-
-
-ISR(WDT_vect){
-	printf("%s", "Timeout");
-};
-
-
-	
