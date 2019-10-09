@@ -11,9 +11,10 @@ extern "C" {
 };
 SPI::SPI(){
 	/* Set MOSI and SCK output, all others input */
-	DDRB = (0<<DDB4) | (1<<DDB5)| (0<<DDB6) |(1<<DDB7);
+	DDRB = (1<<DDB4) | (1<<DDB5)| (0<<DDB6) |(1<<DDB7);
 	/* Enable SPI, Master, set clock rate fck/4 */
-	SPCR0 = (1<<SPE)|(1<<MSTR)|(0<<SPR0);
+	SPCR0 = (1<<SPE)|(1<<MSTR)|(0<<SPR1)|(1<<SPR0);
+	SPSR0 = (1<<SPI2X);
 };
 
 uint8_t SPI::transmit(uint8_t data){
