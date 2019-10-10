@@ -17,7 +17,7 @@
 
 LED_driver::LED_driver(/* args */){
     /*Set Pin 0 to 2 to output: */
-    DDRB = (1<<DDB0)|(1<<DDB1)|(1<<DDB2);
+    DDRB |= (1<<DDB0)|(1<<DDB1)|(1<<DDB2);
     /*Set all pins Low*/
 	clear_bit(PORTB, PB0);clear_bit(PORTB, PB1);clear_bit(PORTB, PB2);
 };
