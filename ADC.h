@@ -14,7 +14,9 @@
 class adc
 {
 public:
-adc();
+	adc();
+	void disable();
+	void enable();
 protected:
 private:
 };

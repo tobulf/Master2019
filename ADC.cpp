@@ -10,3 +10,11 @@ adc::adc(){
 	/*disable input 2-7.*/
 	DIDR0 = (1<<ADC0D) | (1<<ADC1D); 
 }
+
+void adc::enable(){
+	ADCSRA |= (1<<ADEN);
+}
+
+void adc::disable(){
+	ADCSRA &= ~(1<<ADEN);
+}
