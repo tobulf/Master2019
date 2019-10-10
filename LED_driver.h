@@ -11,6 +11,7 @@
 
 #include <util/delay.h>
 #include <avr/io.h>
+#include <util/delay.h>
 
 enum led {GREEN= 0, YELLOW, RED};
 
