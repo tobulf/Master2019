@@ -10,6 +10,8 @@
 #define ADC_H_
 
 #include <avr/io.h>
+#include <avr/interrupt.h>
+#include <stdbool.h>
 
 class adc
 {
@@ -17,9 +19,12 @@ public:
 	adc();
 	void disable();
 	void enable();
-	uint16_t read(uint8_t ch);
+	void start_convertion(uint8_t ch);
+	uint16_t read(void);
+	uint16_t *value;
 protected:
 private:
+	
 };
 
 
