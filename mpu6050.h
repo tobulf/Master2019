@@ -135,6 +135,7 @@ extern int8_t mpu6050_readBit(uint8_t regAddr, uint8_t bitNum, uint8_t *data);
 extern void mpu6050_writeBits(uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data);
 extern void mpu6050_writeBit(uint8_t regAddr, uint8_t bitNum, uint8_t data);
 void mpu6050_init_interrupt(void);
+void mpu6050_set_interrupt_thrshld(uint16_t threshold);
 
 #if MPU6050_GETATTITUDE == 1
 extern void mpu6050_updateQuaternion(void);

@@ -699,7 +699,7 @@ void mpu6050_init_interrupt() {
 	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x40);
 	/* Motion duration: LSB = 1ms */
 	mpu6050_writeByte(MPU6050_RA_MOT_DUR,1);
-	/* MOTION THR */
+	/* Motion threshold: 0x20 default, LSB = 4mg */
 	mpu6050_writeByte(MPU6050_RA_MOT_THR,0x20);
 	_delay_ms(1);
 	/* set HPF to HOLD settings */
@@ -707,3 +707,7 @@ void mpu6050_init_interrupt() {
 	/* Configure intterupt 1: active low */
 	mpu6050_writeBits(MPU6050_RA_INT_PIN_CFG, MPU6050_INTCFG_INT_LEVEL_BIT, 2, 0b10);
 }
+
+void mpu6050_set_interrupt_thrshld(uint16_t threshold) {
+	mpu6050_writeByte(MPU6050_RA_MOT_THR, threshold);
+};
