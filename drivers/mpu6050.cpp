@@ -459,11 +459,6 @@ uint8_t mpu6050_testConnection(void) {
  * initialize the accel and gyro
  */
 void mpu6050_init(void) {
-	// Enable interrupt 1:
-	EICRA |= (1<<ISC10);
-	EICRA &= ~(1<<ISC11);
-	EIMSK |= (1<<INT1);
-	PORTB = (0<<3);
 	//allow mpu6050 chip clocks to start up
 	_delay_ms(100);
 
@@ -695,6 +690,11 @@ void mpu6050_getRollPitchYaw(double *roll, double *pitch, double *yaw) {
 /* Added a driver for motion detection interrupt. Found on a arduino forum: https://forum.arduino.cc/index.php?topic=364758.0 */
 
 void mpu6050_init_interrupt() {
+	/* Enable ext-interrupt ISR0: */
+	EICRA |= (1<<ISC00);
+	EICRA &= ~(1<<ISC01);
+	EIMSK |= (1<<INT0);
+	PORTB = (0<<2);
 	/* Motion interrupt enable 0x00 to reset.*/
 	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x40);
 	/* Motion duration: LSB = 1ms */
