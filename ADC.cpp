@@ -36,7 +36,7 @@ void adc::start_convertion(uint8_t ch){
 uint16_t adc::read(void){
 	if(rdy){
 		rdy = false;	
-		return true;
+		return val;
 	}
 	else {
 		return false;
