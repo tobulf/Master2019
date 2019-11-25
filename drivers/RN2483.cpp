@@ -22,9 +22,16 @@ unsigned char LoRa_COM::receive(void){
 
 
 
-String LoRa_COM::get_answer(void){
+String LoRa_COM::get_answer(bool sleep){
 	 String received;
 	 unsigned char byte;
+	 if(sleep){
+		/* enable Uart interrupt and Idle sleep mode */
+		enable_RX_int();
+		enable_idle();
+		sleep_enable();
+		sleep_mode();
+	 };
 	 /*receive bytes and put them in a string: */
 	 while( (byte = receive()) >= LF){
 		 /*CR+LF termination: */
@@ -65,43 +72,66 @@ void LoRa_COM::UART_flush(void){
 };
 
 void LoRa_COM::enable_RX_int(void){
-	UCSR0A |= (1<<RXCIE);
-};
-void LoRa_COM::disable_RX_int(void){
-	UCSR0A &= ~(1<<RXCIE);
+	UCSR0B |= (1<<RXCIE);
 };
 
-LoRa_COM::LoRa_COM(){
+void LoRa_COM::disable_RX_int(void){
+	UCSR0B &= ~(1<<RXCIE);
+};
+
+void LoRa_COM::send_break(void){
+	UCSR0B = 0x00;
+	UCSR0C = 0x06;
 	/*Delay in case of force Reset */
 	_delay_ms(100);
 	/* Set TXD0 to output */
-	DDRD = (1<<DDD1);
+	DDRD |= (1<<DDRD1);
 	/* Set port low to enable AUTOBAUD */
 	clear_bit(PORTD, 1);
 	_delay_ms(10);
 	/* Reset TX pin */
-	DDRD = 0x00;
+	DDRD &= ~(1<<DDRD1);
 	_delay_us(10);
-	/*Calculate ubbr: */
-	unsigned int ubrr = (F_CPU/(16*LORA_BAUD))-1U;
-	/*Set baud rate */
-	UBRR0H = (unsigned char)(ubrr>>8);
-	UBRR0L = (unsigned char)ubrr;
 	/* Enable receiver and transmitter */
 	UCSR0B = (1<<RXEN)|(1<<TXEN);
 	/* Set frame format:  2stop bit, 8data*/
 	UCSR0C = (1<<USBS)|(3<<UCSZ0);
 	transmit(85);
-	transmit(85);
+	get_answer();
+};
+
+LoRa_COM::LoRa_COM(){
+		UCSR0B = 0x00;
+		UCSR0C = 0x06;
+		/*Delay in case of force Reset */
+		_delay_ms(100);
+		/* Set TXD0 to output */
+		DDRD |= (1<<DDRD1);
+		/* Set port low to enable AUTOBAUD */
+		clear_bit(PORTD, 1);
+		_delay_ms(10);
+		/* Reset TX pin */
+		DDRD &= ~(1<<DDRD1);
+		_delay_us(10);
+		/*Calculate ubbr: */
+		unsigned int ubrr = (F_CPU/(16*LORA_BAUD))-1U;
+		/*Set baud rate */
+		UBRR0H = (unsigned char)(ubrr>>8);
+		UBRR0L = (unsigned char)ubrr;
+		/* Enable receiver and transmitter */
+		UCSR0B = (1<<RXEN)|(1<<TXEN);
+		/* Set frame format:  2stop bit, 8data*/
+		UCSR0C = (1<<USBS)|(3<<UCSZ0);
+		transmit(85);
+		transmit(85);
+		UART_flush();
 };
 
 RN2483::RN2483(){
-	UART_flush();
 	send_command("sys reset");
 	/*Empty the buffer.*/
 	get_answer();
 	_delay_ms(500);
-	
 }
 
 
@@ -151,7 +181,7 @@ bool RN2483::init_OTAA(String app_EUI, String app_key){
 	for(uint8_t i=0;i<3;i++){
 		send_command(String("mac join otaa"));
 		get_answer();
-		answer = get_answer();
+		answer = get_answer(true);
 		if(answer != String("accepted")){
 			success = false;
 		}
@@ -208,13 +238,12 @@ String RN2483::TX_string(String data, uint8_t port){
 	}
 	send_command(String("mac tx uncnf ")+=String(port_no)+=String(" ")+=hex_data);
 	String answer = get_answer();
-	
 	/*Assert if the command was ok. */
 	if (!assert_response(answer)) {
 		//printf("error \r\n");
 	}
 	/*Assert answer: */
-	answer = get_answer();
+	answer = get_answer(true);
 	if (!(answer.startsWith("mac_rx") ^ answer.startsWith("mac_tx"))){
 		/**
 		 * \todo{What to return. can be something... or nothing. maybe internal variable is an option? or return NULL value if nothing?}
@@ -265,8 +294,23 @@ String RN2483::TX_string(String data, uint8_t port){
 	}
 	return answer;
 };
-	
-	
 
+void RN2483::sleep(uint16_t length){
+	if (length<100){
+		/* Sleep indefinitely */
+		send_command(String("sys sleep ")+=String("36000000"));
+	}
+	else{
+		send_command(String("sys sleep ")+=String(length));
+	}
+};
 
+void RN2483::wake(){
+	send_break();
+};
 
+ISR(USART0_RX_vect){
+	sleep_disable();
+	/* Disable USARTO.RXC intterrupt */
+	UCSR0B &= ~(1<<RXCIE);
+};

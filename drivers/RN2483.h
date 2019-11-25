@@ -14,12 +14,14 @@
 #define RN2483_H_
 
 #include <avr/io.h>
-#include <util/delay.h>
+#include <avr/interrupt.h>
 #include <avr/sleep.h>
+#include <util/delay.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "power_management.h"
 #include "WString.h"
 
 
@@ -40,7 +42,7 @@ class LoRa_COM{
 	 * 
 	 * @return String 
 	 */
-	String get_answer(void);
+	String get_answer(bool sleep = false);
 	/**
 	 * @brief Receives a single byte via UART.
 	 * 
@@ -66,7 +68,9 @@ class LoRa_COM{
 	void UART_flush(void);
 	void enable_RX_int(void);
 	void disable_RX_int(void);
+	void send_break(void);
 	private:
+	
 };
 
 /**
@@ -142,7 +146,9 @@ class RN2483: public LoRa_COM {
 	
 	String TX_string(String data, uint8_t port);
 	
-
+	void sleep(uint16_t length = 0);
+	void wake();
+	
 	private:
 	/**
 	 * @brief Support function, turns a char into a hex representation of the byte, in String format(ex: "A" = "41").
@@ -151,7 +157,7 @@ class RN2483: public LoRa_COM {
 	 * @return String 
 	 */
 	String char_to_hex(uint8_t character);
-
+	
 	
 };
 
