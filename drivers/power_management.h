@@ -14,7 +14,7 @@
 void enable_power_save();
 void enable_power_down();
 void enable_standby();
-void clear_sleep_enable();
+void enable_idle();
 
 
 
