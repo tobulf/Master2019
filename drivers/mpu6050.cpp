@@ -459,6 +459,8 @@ uint8_t mpu6050_testConnection(void) {
  * initialize the accel and gyro
  */
 void mpu6050_init(void) {
+	// Initialize external intterupt
+	mpu6050_init_interrupt();
 	//allow mpu6050 chip clocks to start up
 	_delay_ms(100);
 
@@ -695,8 +697,6 @@ void mpu6050_init_interrupt() {
 	EICRA &= ~(1<<ISC01);
 	EIMSK |= (1<<INT0);
 	PORTB = (0<<2);
-	/* Motion interrupt enable 0x00 to reset.*/
-	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x40);
 	/* Motion duration: LSB = 1ms */
 	mpu6050_writeByte(MPU6050_RA_MOT_DUR,1);
 	/* Motion threshold: 0x20 default, LSB = 4mg */
@@ -708,6 +708,16 @@ void mpu6050_init_interrupt() {
 	mpu6050_writeBits(MPU6050_RA_INT_PIN_CFG, MPU6050_INTCFG_INT_LEVEL_BIT, 2, 0b10);
 }
 
+void mpu6050_disable_interrupt(){
+	/* Motion interrupt enable 0x00 to reset.*/
+	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x00);
+}
+
+void mpu6050_enable_interrupt(){
+	/* Motion interrupt enable 0x00 to reset.*/
+	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x40);
+}
+
 void mpu6050_set_interrupt_thrshld(uint16_t threshold) {
 	mpu6050_writeByte(MPU6050_RA_MOT_THR, threshold);
-};
+}
