@@ -15,6 +15,7 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/sleep.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,6 +64,8 @@ class LoRa_COM{
 	 * 
 	 */
 	void UART_flush(void);
+	void enable_RX_int(void);
+	void disable_RX_int(void);
 	private:
 };
 

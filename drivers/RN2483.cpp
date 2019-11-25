@@ -64,8 +64,16 @@ void LoRa_COM::UART_flush(void){
 	while(UCSR0A & (1<<RXC))dummy = UDR0;
 };
 
+void LoRa_COM::enable_RX_int(void){
+	UCSR0A |= (1<<RXCIE);
+};
+void LoRa_COM::disable_RX_int(void){
+	UCSR0A &= ~(1<<RXCIE);
+};
 
 LoRa_COM::LoRa_COM(){
+	/*Delay in case of force Reset */
+	_delay_ms(100);
 	/* Set TXD0 to output */
 	DDRD = (1<<DDD1);
 	/* Set port low to enable AUTOBAUD */
@@ -200,12 +208,13 @@ String RN2483::TX_string(String data, uint8_t port){
 	}
 	send_command(String("mac tx uncnf ")+=String(port_no)+=String(" ")+=hex_data);
 	String answer = get_answer();
+	
 	/*Assert if the command was ok. */
-	//if (!assert_response(answer)) {
-	//	send_command(String("mac tx uncnf ")+=String(port)+=String(" ")+=hex_data);
-	//}
+	if (!assert_response(answer)) {
+		//printf("error \r\n");
+	}
 	/*Assert answer: */
-	//answer = get_answer();
+	answer = get_answer();
 	if (!(answer.startsWith("mac_rx") ^ answer.startsWith("mac_tx"))){
 		/**
 		 * \todo{What to return. can be something... or nothing. maybe internal variable is an option? or return NULL value if nothing?}
