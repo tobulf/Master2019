@@ -92,10 +92,13 @@ extern "C" {
 extern void mpu6050_init(void);
 extern uint8_t mpu6050_testConnection(void);
 
-#if MPU6050_GETATTITUDE == 0
-extern void mpu6050_getRawData(int16_t* ax, int16_t* ay, int16_t* az,int16_t* t, int16_t* gx, int16_t* gy, int16_t* gz);
-extern void mpu6050_getConvData(double* axg, double* ayg, double* azg, double*ta, double* gxds, double* gyds, double* gzds);
-#endif
+
+void mpu6050_getRawGyroData(int16_t* gx, int16_t* gy, int16_t* gz);
+void mpu6050_getRawAccData(int16_t* ax, int16_t* ay, int16_t* az);
+void mpu6050_getRawTempData(int16_t* t);
+void mpu6050_getConvGyroData(double* axg, double* ayg, double* azg);
+void mpu6050_getConvAccData(double* gxds, double* gyds, double* gzds);
+void mpu6050_getConvTempData(double*ta);
 
 extern void mpu6050_setSleepDisabled(void);
 extern void mpu6050_setSleepEnabled(void);

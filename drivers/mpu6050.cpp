@@ -201,40 +201,49 @@ void mpu6050_init(void) {
 	mpu6050_writeBits(MPU6050_RA_I2C_MST_CTRL, MPU6050_MULT_MST_EN_BIT, 1, 0);
 }
 
-//can not accept many request if we alreay have getattitude requests
-/*
- * get raw data
- */
-void mpu6050_getRawData(int16_t* ax, int16_t* ay, int16_t* az,int16_t* t, int16_t* gx, int16_t* gy, int16_t* gz) {
-	mpu6050_readBytes(MPU6050_RA_ACCEL_XOUT_H, 14, (uint8_t *)buffer);
-    *ax = (((int16_t)buffer[0]) << 8) | buffer[1];
-    *ay = (((int16_t)buffer[2]) << 8) | buffer[3];
-    *az = (((int16_t)buffer[4]) << 8) | buffer[5];
-	*t  = (((int16_t)buffer[6]) << 8) | buffer[7];
-    *gx = (((int16_t)buffer[8]) << 8) | buffer[9];
-    *gy = (((int16_t)buffer[10]) << 8) | buffer[11];
-    *gz = (((int16_t)buffer[12]) << 8) | buffer[13];
+void mpu6050_getRawGyroData(int16_t* gx, int16_t* gy, int16_t* gz) {
+	mpu6050_readBytes(MPU6050_RA_GYRO_XOUT_H, 6, (uint8_t *)buffer);
+	*gx = (((int16_t)buffer[0]) << 8) | buffer[1];
+	*gy = (((int16_t)buffer[2]) << 8) | buffer[3];
+	*gz = (((int16_t)buffer[4]) << 8) | buffer[5];
 }
 
-/*
- * get raw data converted to g and deg/sec values
- */
-void mpu6050_getConvData(double* axg, double* ayg, double* azg, double*ta, double* gxds, double* gyds, double* gzds) {
+void mpu6050_getRawAccData(int16_t* ax, int16_t* ay, int16_t* az) {
+	mpu6050_readBytes(MPU6050_RA_ACCEL_XOUT_H, 6, (uint8_t *)buffer);
+	*ax = (((int16_t)buffer[0]) << 8) | buffer[1];
+	*ay = (((int16_t)buffer[2]) << 8) | buffer[3];
+	*az = (((int16_t)buffer[4]) << 8) | buffer[5];
+}
+
+void mpu6050_getRawTempData(int16_t* t) {
+	mpu6050_readBytes(MPU6050_RA_TEMP_OUT_H, 2, (uint8_t *)buffer);
+	*t = (((int16_t)buffer[0]) << 8) | buffer[1];
+}
+
+void mpu6050_getConvGyroData(double* axg, double* ayg, double* azg){
 	int16_t ax = 0;
 	int16_t ay = 0;
 	int16_t az = 0;
-	int16_t  t = 0;
+	mpu6050_getRawGyroData(&ax, &ay, &az);
+	*axg = (double)(ax-MPU6050_AXOFFSET)/MPU6050_AXGAIN;
+	*ayg = (double)(ay-MPU6050_AYOFFSET)/MPU6050_AYGAIN;
+	*azg = (double)(az-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
+}
+
+void mpu6050_getConvAccData(double* gxds, double* gyds, double* gzds){
 	int16_t gx = 0;
 	int16_t gy = 0;
 	int16_t gz = 0;
-	mpu6050_getRawData(&ax, &ay, &az,&t, &gx, &gy, &gz);
-    *axg = (double)(ax-MPU6050_AXOFFSET)/MPU6050_AXGAIN;
-    *ayg = (double)(ay-MPU6050_AYOFFSET)/MPU6050_AYGAIN;
-    *azg = (double)(az-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
-	*ta  = (double)(t-MPU6050_TEMPOFFSET)/MPU6050_TEMPGAIN;
+	mpu6050_getRawGyroData(&gx, &gy, &gz);
     *gxds = (double)(gx-MPU6050_GXOFFSET)/MPU6050_GXGAIN;
-	*gyds = (double)(gy-MPU6050_GYOFFSET)/MPU6050_GYGAIN;
-	*gzds = (double)(gz-MPU6050_GZOFFSET)/MPU6050_GZGAIN;
+    *gyds = (double)(gy-MPU6050_GYOFFSET)/MPU6050_GYGAIN;
+    *gzds = (double)(gz-MPU6050_GZOFFSET)/MPU6050_GZGAIN;
+}
+
+void mpu6050_getConvTempData(double*ta){
+	int16_t  t = 0;
+	mpu6050_getRawTempData(&t);
+	*ta  = (double)(t-MPU6050_TEMPOFFSET)/MPU6050_TEMPGAIN;
 }
 
 /* Added a driver for motion detection interrupt. Found on a arduino forum: https://forum.arduino.cc/index.php?topic=364758.0 */
