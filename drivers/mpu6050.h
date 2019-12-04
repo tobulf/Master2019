@@ -102,6 +102,8 @@ void mpu6050_getConvTempData(double*ta);
 
 extern void mpu6050_setSleepDisabled(void);
 extern void mpu6050_setSleepEnabled(void);
+void mpu6050_tempSensorDisabled(void);
+void mpu6050_tempSensorEnabled(void);
 
 extern int8_t mpu6050_readBytes(uint8_t regAddr, uint8_t length, uint8_t *data);
 extern int8_t mpu6050_readByte(uint8_t regAddr, uint8_t *data);

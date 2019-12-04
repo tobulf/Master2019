@@ -159,9 +159,14 @@ void mpu6050_setSleepEnabled(void) {
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, 1);
 }
 
+void mpu6050_tempSensorDisabled(void){
+	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_TEMP_DIS_BIT, 1);
+}
 
-/*
- * test connectino to chip
+void mpu6050_tempSensorEnabled(void){
+	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_TEMP_DIS_BIT, 0);
+}
+ /* test connection to chip
  */
 uint8_t mpu6050_testConnection(void) {
 	mpu6050_readBits(MPU6050_RA_WHO_AM_I, MPU6050_WHO_AM_I_BIT, MPU6050_WHO_AM_I_LENGTH, (uint8_t *)buffer);
@@ -179,7 +184,6 @@ void mpu6050_init(void) {
 	mpu6050_init_interrupt();
 	//allow mpu6050 chip clocks to start up
 	_delay_ms(100);
-
 	//set sleep disabled
 	mpu6050_setSleepDisabled();
 	//wake up delay needed sleep disabled
@@ -199,6 +203,8 @@ void mpu6050_init(void) {
 	mpu6050_writeBits(MPU6050_RA_ACCEL_CONFIG, MPU6050_ACONFIG_AFS_SEL_BIT, MPU6050_ACONFIG_AFS_SEL_LENGTH, MPU6050_ACCEL_FS);
 	//disable multi master i2c
 	mpu6050_writeBits(MPU6050_RA_I2C_MST_CTRL, MPU6050_MULT_MST_EN_BIT, 1, 0);
+	// disable temp sensor for power saving
+	mpu6050_tempSensorDisabled();
 }
 
 void mpu6050_getRawGyroData(int16_t* gx, int16_t* gy, int16_t* gz) {
@@ -216,8 +222,12 @@ void mpu6050_getRawAccData(int16_t* ax, int16_t* ay, int16_t* az) {
 }
 
 void mpu6050_getRawTempData(int16_t* t) {
+	mpu6050_tempSensorEnabled();
+	//low_power_sleep(WDT_16MS_PRESCALER);
+	_delay_ms(10);
 	mpu6050_readBytes(MPU6050_RA_TEMP_OUT_H, 2, (uint8_t *)buffer);
 	*t = (((int16_t)buffer[0]) << 8) | buffer[1];
+	mpu6050_tempSensorDisabled();
 }
 
 void mpu6050_getConvGyroData(double* axg, double* ayg, double* azg){
