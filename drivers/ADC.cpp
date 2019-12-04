@@ -13,7 +13,7 @@ bool rdy = false;
 adc::adc(){
 	value = &val;
 	ADMUX = (1<<REFS0);
-	ADCSRA = (1<<ADEN)|(1<<ADPS2)|(0<<ADPS1)|(0<<ADPS0) | (1<<ADIE);
+	ADCSRA = (1<<ADPS2)|(0<<ADPS1)|(0<<ADPS0) | (1<<ADIE);
 	//DIDR0 = (1<<ADC0D) | (1<<ADC1D); 
 }
 
@@ -33,10 +33,28 @@ void adc::start_convertion(uint8_t ch){
 	ADCSRA |= (1<<ADSC);
 }
 
-uint16_t adc::read(void){
+uint16_t adc::get_battery_lvl(void){
+	enable();
+	start_convertion(1);
+	while(!read());
+	disable();
+	return val;
+}
+
+
+uint16_t adc::get_light_lvl(void){
+	enable();
+	start_convertion(0);
+	while(!read());
+	disable();
+	return val;
+}
+
+
+bool adc::read(void){
 	if(rdy){
 		rdy = false;	
-		return val;
+		return true;
 	}
 	else {
 		return false;
@@ -44,8 +62,6 @@ uint16_t adc::read(void){
 }
 
 ISR(ADC_vect){
-	if(!rdy){
-		val = ADC;
-		rdy = true;
-	};
+	val = ADC;
+	rdy = true;
 }

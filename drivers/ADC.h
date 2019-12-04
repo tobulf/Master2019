@@ -22,12 +22,13 @@ public:
 	adc();
 	uint16_t get_battery_lvl(void);
 	uint16_t get_light_lvl(void);
-private:
 	void disable();
 	void enable();
 	void start_convertion(uint8_t ch);
-	uint16_t read(void);
+	bool read(void);
 	uint16_t *value;
+private:
+
 	
 };
 
