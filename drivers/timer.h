@@ -27,8 +27,10 @@ class timer {
 	protected:
 	
 	private:
-	long time;
-	long start_time;
+	uint16_t time;
+	uint8_t start_s;
+	uint16_t start_ms;
+	uint16_t start_us;
 	bool reset;
 };
 
