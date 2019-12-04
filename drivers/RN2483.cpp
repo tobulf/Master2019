@@ -262,7 +262,7 @@ String RN2483::TX_string(String data, uint8_t port){
 		
 		/* Case: no free channel*/
 		else if(answer.startsWith("no_free")){
-			return answer;
+			return false;
 		}
 		
 		/* Case: silent state*/
@@ -311,6 +311,6 @@ void RN2483::wake(){
 
 ISR(USART0_RX_vect){
 	sleep_disable();
-	/* Disable USARTO.RXC intterrupt */
+	/* Disable USARTO.RXC interrupt */
 	UCSR0B &= ~(1<<RXCIE);
 };
