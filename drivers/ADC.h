@@ -11,19 +11,23 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/sleep.h>
+#include <util/delay.h>
 #include <stdbool.h>
+#include "power_management.h"
 
 class adc
 {
 public:
 	adc();
+	uint16_t get_battery_lvl(void);
+	uint16_t get_light_lvl(void);
+private:
 	void disable();
 	void enable();
 	void start_convertion(uint8_t ch);
 	uint16_t read(void);
 	uint16_t *value;
-protected:
-private:
 	
 };
 
