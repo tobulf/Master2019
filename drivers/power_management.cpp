@@ -21,3 +21,7 @@ void enable_standby(){
 void enable_idle(){
 	SMCR = 0x00;
 }
+void enable_adc_NR(){
+	SMCR &= ~(1<<SM2) & ~(1<<SM1);
+	SMCR |= (1<<SM0);
+}

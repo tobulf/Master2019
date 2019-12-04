@@ -15,6 +15,7 @@ void enable_power_save();
 void enable_power_down();
 void enable_standby();
 void enable_idle();
+void enable_adc_NR();
 
 
 
