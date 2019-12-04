@@ -16,6 +16,12 @@
 #include <stdbool.h>
 #include "power_management.h"
 
+#define BATTERY_GAIN 3.75
+#define BATTERY_OFFSET 610
+
+#define LIGHTSENSOR_GAIN 1
+#define LIGHTSENSOR_OFFSET 0
+
 class adc
 {
 public:
