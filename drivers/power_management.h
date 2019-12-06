@@ -10,11 +10,30 @@
 #define POWER_MANAGEMENT_H_
 #include <avr/io.h>
 
-
+/**
+ * @brief Enable power save mode.
+ * 
+ */
 void enable_power_save();
+/**
+ * @brief Enable power down mode.
+ * 
+ */
 void enable_power_down();
+/**
+ * @brief Enable standby.
+ * 
+ */
 void enable_standby();
+/**
+ * @brief Enable idle mode.
+ * 
+ */
 void enable_idle();
+/**
+ * @brief Enable ADC noise reduction mode.
+ * 
+ */
 void enable_adc_NR();
 
 

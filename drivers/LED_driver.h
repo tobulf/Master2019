@@ -15,15 +15,37 @@
 
 enum led {GREEN= 0, YELLOW, RED};
 
-
+/**
+ * @brief LED class object
+ * 
+ */
 class LED_driver
 {
 private:
     /* data */
 public:
+    /**
+    * @brief Construct a new led driver object
+    * 
+    */
     LED_driver();
+    /**
+     * @brief turn on a led for ms duration.
+     * 
+     * @param color 
+     * @param ms 
+     */
     void timed_toogle(led color, int ms);
+    /**
+     * @brief Toogle one led.
+     * 
+     * @param color 
+     */
     void toogle(led color);
+    /**
+     * @brief Turn all leds off.
+     * 
+     */
 	void reset();
 };
 

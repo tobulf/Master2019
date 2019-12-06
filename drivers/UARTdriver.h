@@ -15,12 +15,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Comms to Pheripheral:*/
+/**
+ * @brief Communications object for pheripheral UART.
+ * 
+ */
 class PHERIPHERAL_COM{
 public:
+	/**
+	 * @brief Construct a new pheripheral UART.
+	 * 
+	 */
 	PHERIPHERAL_COM();
+	/**
+	 * @brief Recieve one char.
+	 * 
+	 * @return unsigned char 
+	 */
 	unsigned char receive(void);
+	/**
+	 * @brief transmit one char.
+	 * 
+	 * @param data 
+	 */
 	void transmit( uint8_t data );
+	/**
+	 * @brief Transmit one whole string of type char buffer.
+	 * 
+	 * @param string 
+	 */
 	void putstring(char *string);
 protected:
 

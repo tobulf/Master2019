@@ -13,9 +13,29 @@
 #include <stdbool.h>
 #include "MemoryAdresses.h"
 
+/**
+ * @brief Initialize EEPROM
+ * 
+ */
 void EEPROM_init();
+/**
+ * @brief EEPROM Reset all EEPROM-register to standard value(255).
+ * 
+ */
 void EEPROM_reset();
+/**
+ * @brief Write ucData to uiAddress
+ * 
+ * @param uiAddress 
+ * @param ucData 
+ */
 void EEPROM_write(unsigned int uiAddress, unsigned char ucData);
+/**
+ * @brief read from uiAdress return unsigned char data.
+ * 
+ * @param uiAddress 
+ * @return unsigned char 
+ */
 unsigned char EEPROM_read(unsigned int uiAddress);
 
 

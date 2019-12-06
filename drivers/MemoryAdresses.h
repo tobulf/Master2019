@@ -5,6 +5,10 @@
  *  Author: Tobias
  */ 
 
+/**
+ * @brief manualy defined memory adresses for EEPROM.
+ * 
+ */
 
 #ifndef MEMORYADRESSES_H_
 #define MEMORYADRESSES_H_

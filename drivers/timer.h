@@ -16,13 +16,41 @@
 extern "C" {
 	#include "Debug.h"
 };
+/**
+ * @brief Timer class
+ * 
+ */
+
 
 class timer {
 	public:
+	/**
+	 * @brief Construct a new timer object
+	 * 
+	 */
 	timer();
+	/**
+	 * @brief start the timer: 1000ms default if not set.
+	 * 
+	 */
 	void start_timer(void);
+	/**
+	 * @brief reset the timer.
+	 * 
+	 */
 	void reset_timer(void);
+	/**
+	 * @brief Set the time-out for the timer
+	 * 
+	 * @param ms 
+	 */
 	void set_time_out(uint16_t ms);
+	/**
+	 * @brief polling function to check if timer has timed out.
+	 * 
+	 * @return true 
+	 * @return false 
+	 */
 	bool time_out(void);
 	protected:
 	

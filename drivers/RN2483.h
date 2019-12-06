@@ -66,8 +66,20 @@ class LoRa_COM{
 	 * 
 	 */
 	void UART_flush(void);
+	/**
+	 * @brief Enable Uart-RX interrupt.
+	 * 
+	 */
 	void enable_RX_int(void);
+	/**
+	 * @brief Disable Uart-RX interrupt.
+	 * 
+	 */
 	void disable_RX_int(void);
+	/**
+	 * @brief send break condition: 0x55(see. RN2483 command ref.)
+	 * 
+	 */
 	void send_break(void);
 	private:
 	
@@ -145,8 +157,16 @@ class RN2483: public LoRa_COM {
 	 */
 	
 	String TX_string(String data, uint8_t port);
-	
+	/**
+	 * @brief Set the RN2483 in sleep mode indefinately if no arg passed or: min 100ms to 65s.
+	 * 
+	 * @param length 
+	 */
 	void sleep(uint16_t length = 0);
+	/**
+	 * @brief Wake the RN2483 from sleep.
+	 * 
+	 */
 	void wake();
 	
 	private:
