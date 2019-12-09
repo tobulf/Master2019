@@ -180,15 +180,22 @@ uint8_t mpu6050_testConnection(void) {
  * initialize the accel and gyro
  */
 void mpu6050_init(void) {
-	// Initialize external intterupt
-	mpu6050_init_interrupt();
 	//allow mpu6050 chip clocks to start up
-	_delay_ms(100);
+	enable_power_down();
+	sleep_enable();
+	wdt_enable(WDTO_120MS);
+	wdt_INT_enable();
+	sleep_mode();
 	//set sleep disabled
 	mpu6050_setSleepDisabled();
 	//wake up delay needed sleep disabled
-	_delay_ms(10);
-
+	enable_power_down();
+	sleep_enable();
+	wdt_enable(WDTO_15MS);
+	wdt_INT_enable();
+	sleep_mode();
+	// Initialize external interrupt
+	mpu6050_init_interrupt();
 	//set clock source
 	//  it is highly recommended that the device be configured to use one of the gyroscopes (or an external clock source)
 	//  as the clock reference for improved stability
@@ -223,8 +230,13 @@ void mpu6050_getRawAccData(int16_t* ax, int16_t* ay, int16_t* az) {
 
 void mpu6050_getRawTempData(int16_t* t) {
 	mpu6050_tempSensorEnabled();
-	//low_power_sleep(WDT_16MS_PRESCALER);
-	_delay_ms(10);
+	// Use watchdog timer to sleep for 15 ms
+	enable_power_down();
+	sleep_enable();
+	wdt_enable(WDTO_15MS);
+	wdt_INT_enable();
+	sleep_mode();
+	
 	mpu6050_readBytes(MPU6050_RA_TEMP_OUT_H, 2, (uint8_t *)buffer);
 	*t = (((int16_t)buffer[0]) << 8) | buffer[1];
 	mpu6050_tempSensorDisabled();
@@ -288,3 +300,4 @@ void mpu6050_enable_interrupt(){
 void mpu6050_set_interrupt_thrshld(uint16_t threshold) {
 	mpu6050_writeByte(MPU6050_RA_MOT_THR, threshold);
 }
+

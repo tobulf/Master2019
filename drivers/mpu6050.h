@@ -19,6 +19,8 @@ References:
 
 #include <avr/io.h>
 #include "mpu6050registers.h"
+#include "power_management.h"
+#include "WDT.h"
 
 #ifdef __cplusplus
 extern "C" {
