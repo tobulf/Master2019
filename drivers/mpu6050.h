@@ -116,13 +116,14 @@ extern int8_t mpu6050_readBit(uint8_t regAddr, uint8_t bitNum, uint8_t *data);
 extern void mpu6050_writeBits(uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data);
 extern void mpu6050_writeBit(uint8_t regAddr, uint8_t bitNum, uint8_t data);
 void mpu6050_init_interrupt(void);
-void mpu6050_set_interrupt_thrshld(uint16_t threshold);
+void mpu6050_set_interrupt_thrshld(uint8_t threshold);
 void mpu6050_enable_interrupt(void);
 void mpu6050_disable_interrupt(void);
 void mpu6050_gyroEnabled(void);
 void mpu6050_gyroDisabled(void);
 void mpu6050_accEnabled(void);
 void mpu6050_accDisabled(void);
+void mpu6050_lowPower_mode(void);
 
 #ifdef __cplusplus
 }
