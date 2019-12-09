@@ -121,6 +121,8 @@ void mpu6050_enable_interrupt(void);
 void mpu6050_disable_interrupt(void);
 void mpu6050_gyroEnabled(void);
 void mpu6050_gyroDisabled(void);
+void mpu6050_accEnabled(void);
+void mpu6050_accDisabled(void);
 
 #ifdef __cplusplus
 }
