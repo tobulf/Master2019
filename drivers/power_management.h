@@ -9,6 +9,8 @@
 #ifndef POWER_MANAGEMENT_H_
 #define POWER_MANAGEMENT_H_
 #include <avr/io.h>
+#include <avr/sleep.h>
+
 
 
 void enable_power_save();
@@ -16,6 +18,7 @@ void enable_power_down();
 void enable_standby();
 void enable_idle();
 void enable_adc_NR();
+
 
 
 
