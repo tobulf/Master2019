@@ -119,6 +119,8 @@ void mpu6050_init_interrupt(void);
 void mpu6050_set_interrupt_thrshld(uint16_t threshold);
 void mpu6050_enable_interrupt(void);
 void mpu6050_disable_interrupt(void);
+void mpu6050_gyroEnabled(void);
+void mpu6050_gyroDisabled(void);
 
 #ifdef __cplusplus
 }
