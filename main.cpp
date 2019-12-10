@@ -51,16 +51,20 @@ adc AnalogIn;
 LED_driver Leds;
 RTC rtc;
 RN2483 radio;
+const uint8_t uplink_buf_length = 10;
+uint8_t uplink_buf[uplink_buf_length];
+uint8_t* downlink_buf;
+
 
 int main (void){
 	sei();
 	Leds.toogle(RED);
 	USART_init();
 	//EEPROM_init();
-	//joined = radio.init_OTAA(appEui,appKey);
-	//radio.set_DR(0);
-	//radio.set_duty_cycle(1, 0);
-	//radio.sleep();
+	joined = radio.init_OTAA(appEui,appKey);
+	radio.set_DR(0);
+	radio.set_duty_cycle(1, 0);
+	radio.sleep();
 	/* Enable interrupts */
 	//sei();
 	uint8_t time = 0;
@@ -72,14 +76,19 @@ int main (void){
 		if (true){	
 			time=0;
 			printf("Bat %d \n", dataadc);
-			//radio.wake();
-			//radio.TX_string(String(420), 1);
-			//Leds.toogle(GREEN);
-			//radio.sleep();
-			//radio.TX_string(String(420), 1);
-			//Leds.toogle(GREEN);
-			//radio.sleep();
-			_delay_ms(100);
+			Leds.toogle(GREEN);
+			radio.wake();
+			uplink_buf[1] = dataadc;
+			timestamp = rtc.get_epoch();
+			downlink_buf = radio.TX_bytes(uplink_buf, uplink_buf_length, 1);
+			timestamp = rtc.get_epoch() - timestamp;
+			for (uint8_t i = 0; i<8; i++){
+				printf("%d ", downlink_buf[i]);
+			}
+			printf(" RTT:  %lu\n",timestamp);
+			Leds.toogle(GREEN);
+			radio.sleep();
+			_delay_ms(5000);
 			}
 		}
    }
