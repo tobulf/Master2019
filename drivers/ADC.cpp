@@ -42,9 +42,6 @@ uint16_t adc::get_battery_lvl(void){
 	if (level > 100){
 		return 100;
 	}
-	else if (level < 0){
-		return 0;
-	} 
 	else{
 		return level;
 	}
@@ -58,10 +55,10 @@ uint16_t adc::get_light_lvl(void){
 	disable();
 	int level = (int)((val-LIGHTSENSOR_OFFSET)/LIGHTSENSOR_GAIN);
 	if (level > 100){
-		return 100;
+		return level;
 	}
 	else if (level < 0){
-		return 0;
+		return level;
 	}
 	else{
 		return level;
