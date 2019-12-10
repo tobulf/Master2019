@@ -124,6 +124,7 @@ void mpu6050_gyroDisabled(void);
 void mpu6050_accEnabled(void);
 void mpu6050_accDisabled(void);
 void mpu6050_lowPower_mode(void);
+void mpu6050_normalPower_mode(void);
 
 #ifdef __cplusplus
 }
