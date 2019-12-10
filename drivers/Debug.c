@@ -66,9 +66,9 @@ void USART_init(unsigned int BR){
 	UBRR2H = (unsigned char)(ubrr>>8);
 	UBRR2L = (unsigned char)ubrr;
 	/* Enable receiver and transmitter */
-	UCSR2B = (1<<RXEN)|(1<<TXEN);
+	UCSR2B |= (1<<RXEN)|(1<<TXEN);
 	/* Set frame format:  2stop bit, 8data*/
-	UCSR2C = (1<<USBS)|(3<<UCSZ0);
+	UCSR2C |= (1<<USBS)|(3<<UCSZ0);
 	stdout = &mystdout;
 	//stdin = &mystdout;
 }
