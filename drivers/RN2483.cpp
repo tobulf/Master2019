@@ -21,7 +21,6 @@ unsigned char LoRa_COM::receive(void){
 }
 
 
-
 String LoRa_COM::get_answer(bool sleep){
 	 String received;
 	 unsigned char byte;
@@ -229,11 +228,29 @@ String RN2483::char_to_hex(uint8_t character){
 	return hex_string;
 };
 
+uint8_t RN2483::hex_string_to_byte(uint8_t* hex_string){
+	uint8_t msb = 0;
+	uint8_t lsb = 0;
 
-String RN2483::TX_string(String data, uint8_t port){
+	if (hex_string[0] >= 65){
+		msb = hex_string[0] - 55;
+	}
+	else { //(hex_string[0] >= "0")
+			msb = hex_string[0] - 48;
+	}
+	if (hex_string[1] >= 65){
+		lsb = hex_string[1] - 55;
+	}
+	else { //(hex_string[1] >= "0")
+		lsb = hex_string[1] - 48;
+	}
+	return (msb << 4) | lsb;
+};
+
+uint8_t* RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	String hex_data;
 	uint8_t port_no = port;
-	for (uint8_t i = 0; i < data.length(); i++){
+	for (uint8_t i = 0; i < num_bytes; i++){
 		hex_data.concat(char_to_hex(data[i]));
 	}
 	send_command(String("mac tx uncnf ")+=String(port_no)+=String(" ")+=hex_data);
@@ -244,7 +261,7 @@ String RN2483::TX_string(String data, uint8_t port){
 	}
 	/*Assert answer: */
 	answer = get_answer(true);
-	if (!(answer.startsWith("mac_rx") ^ answer.startsWith("mac_tx"))){
+	if (!answer.startsWith("mac_rx")){
 		/**
 		 * \todo{What to return. can be something... or nothing. maybe internal variable is an option? or return NULL value if nothing?}
 		 * Each statement is shortened to save memory, such that i.e: not_joined is shortened to not. As there are no other responses that starts the same. See command RN2483 Command reference 2.4.2.
@@ -287,13 +304,14 @@ String RN2483::TX_string(String data, uint8_t port){
 		else if(answer.startsWith("mac_er")){
 			return false;
 		}
-		/* */
-		else {
-			return -1;
-		}
 	}
-	return answer;
+	for(uint8_t i = 0; i < 8;i++){
+		uint8_t hex_string[2] = {(uint8_t)answer[2*i+9],(uint8_t)answer[2*i+10]};
+		buf[i] = hex_string_to_byte(hex_string);
+	}
+	return buf;
 };
+
 
 void RN2483::sleep(uint16_t length){
 	if (length<100){
@@ -314,3 +332,68 @@ ISR(USART0_RX_vect){
 	/* Disable USARTO.RXC interrupt */
 	UCSR0B &= ~(1<<RXCIE);
 };
+
+/* Function to transmit string not in use
+String RN2483::TX_string(String data, uint8_t port){
+	String hex_data;
+	uint8_t port_no = port;
+	for (uint8_t i = 0; i < data.length(); i++){
+		hex_data.concat(char_to_hex(data[i]));
+	}
+	send_command(String("mac tx uncnf ")+=String(port_no)+=String(" ")+=hex_data);
+	String answer = get_answer();
+	//Assert if the command was ok. 
+	if (!assert_response(answer)) {
+		//printf("error \r\n");
+	}
+	//Assert answer: 
+	answer = get_answer(true);
+	if (!(answer.startsWith("mac_rx") ^ answer.startsWith("mac_tx"))){
+		printf("%s\n", answer.c_str());
+		// Chip is in Busy state
+		if(answer.startsWith("bus")){
+			return false;
+		}
+		
+		// Case: Not joined
+		else if(answer.startsWith("not")){
+			return false;
+		}
+		
+		// Case: no free channel
+		else if(answer.startsWith("no_free")){
+			return false;
+		}
+		
+		// Case: silent state
+		else if(answer.startsWith("sil")){
+			return false;
+		}
+		
+		// Case: Frame counter rolled over
+		else if(answer.startsWith("fra")){
+			return false;
+		}
+
+		// Mac is set to pause, not resumed
+		else if(answer.startsWith("mac_pa")){
+			return false;
+		}
+		// invalid data length, to long data to send(compared to current channel).
+		else if(answer.startsWith("invalid_da")){
+			return false;
+		}
+		// Transmission unsuccessful
+		else if(answer.startsWith("mac_er")){
+			return false;
+		}
+		else {
+			return -1;
+		}
+	}
+	
+	printf("%s\n", answer.c_str());
+	return answer;
+};
+
+*/
