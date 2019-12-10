@@ -9,6 +9,8 @@
 #ifndef POWER_MANAGEMENT_H_
 #define POWER_MANAGEMENT_H_
 #include <avr/io.h>
+#include <avr/sleep.h>
+
 
 /**
  * @brief Enable power save mode.
@@ -35,6 +37,7 @@ void enable_idle();
  * 
  */
 void enable_adc_NR();
+
 
 
 

@@ -13,7 +13,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-enum led {GREEN= 0, YELLOW, RED};
+enum led {RED= 0, YELLOW, GREEN};
 
 /**
  * @brief LED class object
