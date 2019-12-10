@@ -42,7 +42,7 @@ extern "C" {
 #define clear_bit(reg, bit ) (reg &= ~(1 << bit))
 #define test_bit(reg, bit ) (reg & (1 << bit))
 
-uint16_t threshold = 38;
+uint16_t threshold = 0;
 bool joined = false;
 
 #define CONVERTED_DATA
@@ -61,15 +61,22 @@ int main (void){
 	//radio.set_DR(0);
 	//radio.set_duty_cycle(1, 0);
 	//radio.sleep();
+	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_DEVICE_RESET_BIT, 1);
 	mpu6050_init();
+	mpu6050_normalPower_mode();
+	//mpu6050_lowPower_mode();
+	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 1);
+	//mpu6050_accdisabled();
+	//mpu6050_gyroEnabled();
+	//mpu6050_tempSensorDisabled();
 	/* Enable interrupts */
 	//sei();
 	#ifdef CONVERTED_DATA	
-	double a = 0;double b = 0;double c = 0;double d = 0;double e = 0;double f = 0;double t;
+	double a = 0;double b = 0;double c = 0;double d = 0;double e = 0;double f = 0;double t = 0;
 	#else
-	int16_t a = 0;int16_t b = 0;int16_t c = 0;int16_t d = 0;int16_t e = 0;int16_t f = 0;int16_t t;
+	int16_t a = 0;int16_t b = 0;int16_t c = 0;int16_t d = 0;int16_t e = 0;int16_t f = 0;int16_t t = 0;
 	#endif
-	stopwatch.set_time_out(50);
+	//stopwatch.set_time_out(50);
 	uint8_t time = 0;
 	uint16_t dataadc = 0;
 	while (true){
@@ -83,7 +90,8 @@ int main (void){
 		mpu6050_getRawTempData(&t);
 		mpu6050_getRawAccData(&d, &e, &f);
 		#endif
-		if (stopwatch.time_out()){	
+		dataadc = AnalogIn.get_battery_lvl();
+		if (true){	
 			//printf("Adc: %d \r\n",(dataadc));
 			time++;
 			uint8_t data = mpu6050_testConnection();
@@ -94,6 +102,8 @@ int main (void){
 				mpu6050_getConvAccData(&a, &b, &c);
 				mpu6050_getConvTempData(&t);
 				mpu6050_getConvGyroData(&d, &e, &f);
+				//mpu6050_getConvTempData(&t);
+				//mpu6050_getConvGyroData(&d, &e, &f);
 				_delay_ms(10);
 				int a2 = (int)(a + 0.5 - (a<0));
 				int b2 = (int)(b + 0.5 - (b<0));
@@ -108,7 +118,18 @@ int main (void){
 				mpu6050_getRawTempData(&t);
 				mpu6050_getRawGyroData(&d, &e, &f);
 				_delay_ms(10);
-				printf("ax: %i ay: %i az: %i temp: %i gx: %i gy: %i gz: %i \n", a, b, c, t, d, e, f);
+				printf("ax: %i ay: %i az: %i ", a2, b2, c2);
+				//printf("temp: %i ", t2);
+				//printf("gx: %i gy: %i gz: %i", d2, e2, f2);
+				printf("\n");
+				mpu6050_getRawAccData(&a, &b, &c);
+				//mpu6050_getRawTempData(&t);
+				//mpu6050_getRawGyroData(&d, &e, &f);
+				_delay_ms(10);
+				printf("ax: %i ay: %i az: %i ", a, b, c);
+				//printf("temp: %i ", t);
+				//printf("gx: %i gy: %i gz: %i ", d, e, f);
+				printf(" \n");
 				#endif
 				printf("Bat %d \n", dataadc);
 				//radio.wake();
@@ -116,17 +137,26 @@ int main (void){
 				//radio.TX_string(String(420), 1);
 				Leds.toogle(GREEN);
 				//radio.sleep();
+				radio.TX_string(String(420), 1);
+				Leds.toogle(GREEN);
+				//radio.sleep();
+				_delay_ms(5000);
+				}
 			}
 		}
-	}
+   }
 	
-}
 
 ISR(INT0_vect){
 	threshold++;
+	printf("Gyro interrupt \n");
 	mpu6050_set_interrupt_thrshld(threshold);
 };
 
-
-
-
+ISR(INT1_vect){
+	printf("Dummy interrupt \n");
+};
+ISR(WDT_vect){
+	wdt_disable();
+	sleep_disable();
+};
