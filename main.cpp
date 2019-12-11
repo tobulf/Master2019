@@ -80,7 +80,9 @@ int main (void){
 			radio.wake();
 			uplink_buf[1] = dataadc;
 			timestamp = rtc.get_epoch();
-			downlink_buf = radio.TX_bytes(uplink_buf, uplink_buf_length, 1);
+			if(radio.TX_bytes(uplink_buf, uplink_buf_length, 1)){
+				downlink_buf = radio.get_downlink_buf();
+			}
 			timestamp = rtc.get_epoch() - timestamp;
 			for (uint8_t i = 0; i<8; i++){
 				printf("%d ", downlink_buf[i]);

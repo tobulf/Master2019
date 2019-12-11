@@ -247,7 +247,7 @@ uint8_t RN2483::hex_string_to_byte(uint8_t* hex_string){
 	return (msb << 4) | lsb;
 };
 
-uint8_t* RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
+bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	String hex_data;
 	uint8_t port_no = port;
 	for (uint8_t i = 0; i < num_bytes; i++){
@@ -309,8 +309,12 @@ uint8_t* RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 		uint8_t hex_string[2] = {(uint8_t)answer[2*i+9],(uint8_t)answer[2*i+10]};
 		buf[i] = hex_string_to_byte(hex_string);
 	}
-	return buf;
+	return true;
 };
+
+uint8_t* RN2483::get_downlink_buf(){
+	return buf;
+}
 
 
 void RN2483::sleep(uint16_t length){
