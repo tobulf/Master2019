@@ -157,11 +157,14 @@ class RN2483: public LoRa_COM {
 	 */
 	
 	//String TX_string(String data, uint8_t port);
+	
+	
 	bool TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port);
 	
-	uint8_t* get_downlink_buf();
+	bool unread_downlink();
+	uint8_t* read_downlink_buf();
 	/**
-	 * @brief Set the RN2483 in sleep mode indefinately if no arg passed or: min 100ms to 65s.
+	 * @brief Set the RN2483 in sleep mode indefinitely if no arg passed or: min 100ms to 65s.
 	 * 
 	 * @param length 
 	 */
@@ -182,6 +185,7 @@ class RN2483: public LoRa_COM {
 	String char_to_hex(uint8_t character);
 	uint8_t hex_string_to_byte(uint8_t* hex_string);
 	uint8_t buf[8];
+	bool new_msg;
 	
 	
 };

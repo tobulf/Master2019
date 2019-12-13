@@ -127,6 +127,7 @@ LoRa_COM::LoRa_COM(){
 };
 
 RN2483::RN2483(){
+	new_msg = false;
 	send_command("sys reset");
 	/*Empty the buffer.*/
 	get_answer();
@@ -261,59 +262,74 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	}
 	/*Assert answer: */
 	answer = get_answer(true);
-	if (!answer.startsWith("mac_rx")){
-		/**
-		 * \todo{What to return. can be something... or nothing. maybe internal variable is an option? or return NULL value if nothing?}
-		 * Each statement is shortened to save memory, such that i.e: not_joined is shortened to not. As there are no other responses that starts the same. See command RN2483 Command reference 2.4.2.
-		 */
-		printf("%s\n", answer.c_str());
-		/* Chip is in Busy state*/
-		if(answer.startsWith("bus")){
-			return false;
+	if (answer.startsWith("mac_rx")){
+		for(uint8_t i = 0; i < 8;i++){
+			uint8_t hex_string[2] = {(uint8_t)answer[2*i+9],(uint8_t)answer[2*i+10]};
+			buf[i] = hex_string_to_byte(hex_string);
 		}
-		
-		/* Case: Not joined*/
-		else if(answer.startsWith("not")){
-			return false;
-		}
-		
-		/* Case: no free channel*/
-		else if(answer.startsWith("no_free")){
-			return false;
-		}
-		
-		/* Case: silent state*/
-		else if(answer.startsWith("sil")){
-			return false;
-		}
-		
-		/* Case: Frame counter rolled over*/
-		else if(answer.startsWith("fra")){
-			return false;
-		}
+		new_msg = true;
+		return true;
+	}
+	/* Case: no downlink*/
+	else if(answer.startsWith("mac_tx")){
+		return true;
+	}
+	/* Chip is in Busy state*/
+	else if(answer.startsWith("bus")){
+		return false;
+	}
+	
+	/* Case: Not joined*/
+	else if(answer.startsWith("not")){
+		return false;
+	}
+	
+	/* Case: no free channel*/
+	else if(answer.startsWith("no_free")){
+		return false;
+	}
+	
+	/* Case: silent state*/
+	else if(answer.startsWith("sil")){
+		return false;
+	}
+	
+	/* Case: Frame counter rolled over*/
+	else if(answer.startsWith("fra")){
+		return false;
+	}
 
-		/* Mac is set to pause, not resumed*/
-		else if(answer.startsWith("mac_pa")){
-			return false;
-		}
-		/* invalid data length, to long data to send(compared to current channel).*/
-		else if(answer.startsWith("invalid_da")){
-			return false;
-		}
-		/* Transmission unsuccessful*/
-		else if(answer.startsWith("mac_er")){
-			return false;
-		}
+	/* Mac is set to pause, not resumed*/
+	else if(answer.startsWith("mac_pa")){
+		return false;
 	}
-	for(uint8_t i = 0; i < 8;i++){
-		uint8_t hex_string[2] = {(uint8_t)answer[2*i+9],(uint8_t)answer[2*i+10]};
-		buf[i] = hex_string_to_byte(hex_string);
+	/* invalid data length, to long data to send(compared to current channel).*/
+	else if(answer.startsWith("invalid_da")){
+		return false;
 	}
-	return true;
+	/* Transmission unsuccessful*/
+	else if(answer.startsWith("mac_er")){
+		return false;
+	}
+	else{
+		return -1;
+	}
 };
+bool RN2483::unread_downlink(){
+	if (new_msg){
+		return true;
+	}
+	else{
+		return false;
+	}
+	};
 
-uint8_t* RN2483::get_downlink_buf(){
-	return buf;
+uint8_t* RN2483::read_downlink_buf(){
+	if (new_msg){
+		new_msg = false;
+		return buf;
+	}
+	return false;
 }
 
 
