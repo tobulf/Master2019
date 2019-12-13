@@ -81,13 +81,16 @@ int main (void){
 			uplink_buf[1] = dataadc;
 			timestamp = rtc.get_epoch();
 			if(radio.TX_bytes(uplink_buf, uplink_buf_length, 1)){
-				downlink_buf = radio.get_downlink_buf();
+				timestamp = rtc.get_epoch() - timestamp;
+				if (radio.unread_downlink()){
+					downlink_buf = radio.read_downlink_buf();
+					for (uint8_t i = 0; i < 11; i++){
+						printf("%d ", downlink_buf[i]);
+						}
+				}
 			}
-			timestamp = rtc.get_epoch() - timestamp;
-			for (uint8_t i = 0; i<8; i++){
-				printf("%d ", downlink_buf[i]);
-			}
-			printf(" RTT:  %lu\n",timestamp);
+
+			printf("RTT:  %lu\n",timestamp);
 			Leds.toogle(GREEN);
 			radio.sleep();
 			_delay_ms(5000);
@@ -105,6 +108,7 @@ ISR(INT0_vect){
 ISR(INT1_vect){
 	printf("Dummy interrupt \n");
 };
+
 ISR(WDT_vect){
 	wdt_disable();
 	sleep_disable();

@@ -263,7 +263,7 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	/*Assert answer: */
 	answer = get_answer(true);
 	if (answer.startsWith("mac_rx")){
-		for(uint8_t i = 0; i < 8;i++){
+		for(uint8_t i = 0; i < 11;i++){
 			uint8_t hex_string[2] = {(uint8_t)answer[2*i+9],(uint8_t)answer[2*i+10]};
 			buf[i] = hex_string_to_byte(hex_string);
 		}

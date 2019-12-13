@@ -184,7 +184,7 @@ class RN2483: public LoRa_COM {
 	 */
 	String char_to_hex(uint8_t character);
 	uint8_t hex_string_to_byte(uint8_t* hex_string);
-	uint8_t buf[8];
+	uint8_t buf[11];
 	bool new_msg;
 	
 	
