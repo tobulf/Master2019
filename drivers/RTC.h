@@ -22,6 +22,7 @@ class RTC {
 	RTC();
 	void set_time(uint64_t epoch);
 	uint32_t get_epoch();
+	uint64_t get_timestamp();
 	protected:
 	
 	private:
