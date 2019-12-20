@@ -43,7 +43,7 @@ adc AnalogIn;
 RTC rtc;
 RN2483 radio;
 LED_driver LED;
-uint64_t synch_timestamp = 1576860400000000;
+uint64_t synch_timestamp = 1576862400000000;
 uint64_t timestamp;
 uint8_t bat;
 uint32_t sec;
