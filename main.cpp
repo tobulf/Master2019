@@ -43,16 +43,21 @@ adc AnalogIn;
 RTC rtc;
 RN2483 radio;
 LED_driver LED;
-uint64_t new_timestamp = 10000000000;
-bool sync = true;
+uint64_t synch_timestamp = 1576860400000000;
+uint64_t timestamp;
+uint8_t bat;
+uint32_t sec;
+uint32_t us;
+bool sync = false;
 bool sleep = false;
+bool print = false;
 
 int main (void){
-	LED.toogle(RED);
+	wdt_off();
+ 	LED.toogle(RED);
 	/* Enable interrupts */
 	sei();
 	USART_init();
-	LED.toogle(RED);
 	mpu6050_init();
 	mpu6050_disable_interrupt();
 	mpu6050_gyroDisabled();
@@ -70,20 +75,24 @@ int main (void){
 	PORTD |= (0<<3) | (0<<7);
 	PORTB |= (0<<5);
 	LED.toogle(RED);
-	LED.toogle(GREEN);
+	LED.toogle(YELLOW);
 	//sei();
 	/*Wait for sync: */
-	while (!sync);
 	while (true){
-		printf("HELLO \n");
-		if(sleep){
-			enable_power_save();
-			sleep_enable();
-			sleep_mode();
+		if(sync){
+			if(sleep){
+				enable_power_save();
+				sleep_enable();
+				sleep_mode();
+			}
+			else if(print){
+				printf("Bat %d %s Time: %lu s %lu us \n", bat, "%", sec, us);
+				print=false;
+			}
 		}
-			
+		_delay_ms(1);	
 	}
-   }
+};
 	
 
 ISR(INT1_vect){
@@ -109,22 +118,28 @@ ISR(PCINT1_vect){
 	cli();
 	if(!sync){
 		sync = true;
-		rtc.set_time(new_timestamp);
+		rtc.set_time(synch_timestamp);
+		sei();
+		printf("Time synched! \n");
+		LED.toogle(YELLOW);
+		LED.toogle(GREEN);
 	}
 	sei();
 };
 
 ISR(PCINT3_vect){
-	LED.toogle(YELLOW);
 	cli();
 	AnalogIn.enable();
-	uint64_t timestamp = rtc.get_timestamp();
+	timestamp = rtc.get_timestamp();
 	sei();
-	uint8_t bat = AnalogIn.get_battery_lvl();
+	bat = AnalogIn.get_battery_lvl();
 	AnalogIn.disable();
-	uint32_t sec = timestamp / 1000000;
-	uint32_t us = uint32_t(timestamp-(uint64_t)sec*1000000);
-	printf("Bat %d %s Time: %lu s %lu us \n", bat, "%", sec, us);
-	LED.toogle(YELLOW);
+	sec = timestamp / 1000000;
+	us = uint32_t(timestamp-(uint64_t)sec*1000000);
+	print =true;
 };
-	
+
+ISR(WDT_vect){
+	wdt_disable();
+	sleep_disable();
+};
