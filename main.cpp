@@ -38,82 +38,93 @@ extern "C" {
 
 };
 
-/* Handy macros: */
-#define set_bit(reg, bit ) (reg |= (1 << bit))
-#define clear_bit(reg, bit ) (reg &= ~(1 << bit))
-#define test_bit(reg, bit ) (reg & (1 << bit))
-
-uint16_t threshold = 0;
-bool joined = false;
-
-#define CONVERTED_DATA
 
 adc AnalogIn;
-LED_driver Leds;
 RTC rtc;
 RN2483 radio;
-const uint8_t uplink_buf_length = 10;
-uint8_t uplink_buf[uplink_buf_length];
-uint8_t* downlink_buf;
-uint64_t new_timestamp;
-uint32_t t_callback;
+LED_driver LED;
+uint64_t new_timestamp = 10000000000;
+bool sync = true;
+bool sleep = false;
+
 int main (void){
-	printf("Booting... \n");
-	sei();
-	Leds.toogle(RED);
-	USART_init();
-	//EEPROM_init();
-	joined = radio.init_OTAA(appEui,appKey);
-	radio.set_DR(0);
-	radio.set_duty_cycle(1, 0);
-	radio.sleep();
+	LED.toogle(RED);
 	/* Enable interrupts */
+	sei();
+	USART_init();
+	LED.toogle(RED);
+	mpu6050_init();
+	mpu6050_disable_interrupt();
+	mpu6050_gyroDisabled();
+	mpu6050_accDisabled();
+	mpu6050_tempSensorDisabled();
+	mpu6050_setSleepEnabled();
+	radio.sleep();
+	AnalogIn.disable();
+	EICRA |= (1<<ISC11);
+	EICRA |= (1<<ISC10);
+	EIMSK |= (1<<INT1);
+	PCICR |= (1<<PCIE1)| (1<<PCIE3);
+	PCMSK1|= (1<<PCINT13);
+	PCMSK3|= (1<<PCINT31);
+	PORTD |= (0<<3) | (0<<7);
+	PORTB |= (0<<5);
+	LED.toogle(RED);
+	LED.toogle(GREEN);
 	//sei();
-	uint8_t time = 0;
-	uint16_t dataadc = 0;
+	/*Wait for sync: */
+	while (!sync);
 	while (true){
-		dataadc = AnalogIn.get_battery_lvl();
-		uint32_t timestamp = rtc.get_epoch();
-		//printf("Epoch: %lu \n", timestamp);
-		if (true){	
-			time=0;
-			printf("Bat %d \n", dataadc);
-			Leds.toogle(GREEN);
-			radio.wake();
-			uplink_buf[1] = dataadc;
-			timestamp = rtc.get_epoch();
-			if(radio.TX_bytes(uplink_buf, uplink_buf_length, 1)){
-				timestamp = rtc.get_epoch() - timestamp;
-				if (radio.unread_downlink()){
-					downlink_buf = radio.read_downlink_buf();
-					for (uint8_t i = 0; i < 11; i++){
-						//printf("%d ", downlink_buf[i]);
-						}
-						//printf("\n");
-						convert_downlink(downlink_buf, new_timestamp, t_callback);
-						rtc.set_time(new_timestamp);	
-				}
-			}
-			//printf("RTT:  %lu\n",timestamp);
-			Leds.toogle(GREEN);
-			radio.sleep();
-			_delay_ms(5000);
-			}
+		printf("HELLO \n");
+		if(sleep){
+			enable_power_save();
+			sleep_enable();
+			sleep_mode();
 		}
+			
+	}
    }
 	
 
-ISR(INT0_vect){
-	threshold++;
-	printf("Gyro interrupt \n");
-	mpu6050_set_interrupt_thrshld(threshold);
-};
-
 ISR(INT1_vect){
-	printf("Dummy interrupt \n");
+	cli();
+	sleep_disable();
+	if(sync){
+		if (sleep){
+			printf("woke up! \n");
+			LED.toogle(GREEN);
+			sleep = false;
+		}
+		else{
+			sleep = true;
+			printf("going to sleep...\n");
+			LED.toogle(GREEN);
+		}
+	}
+	sei();
+	
 };
 
-ISR(WDT_vect){
-	wdt_disable();
-	sleep_disable();
+ISR(PCINT1_vect){
+	cli();
+	if(!sync){
+		sync = true;
+		rtc.set_time(new_timestamp);
+	}
+	sei();
 };
+
+ISR(PCINT3_vect){
+	LED.toogle(YELLOW);
+	cli();
+	AnalogIn.enable();
+	uint64_t timestamp = rtc.get_timestamp();
+	sei();
+	uint8_t bat = AnalogIn.get_battery_lvl();
+	AnalogIn.disable();
+	uint32_t sec = timestamp / 1000000;
+	uint32_t us = uint32_t(timestamp-(uint64_t)sec*1000000);
+	printf("Bat %d %s Time: %lu s %lu us \n", bat, "%", sec, us);
+	LED.toogle(YELLOW);
+};
+	
