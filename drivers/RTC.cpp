@@ -7,8 +7,7 @@
 
 #include "RTC.h"
 
-
-uint32_t seconds = 10000;
+uint32_t seconds = 0;
 uint16_t millis = 0;
 uint16_t millis_error = 0;
 uint16_t micros = 0;
@@ -32,11 +31,16 @@ RTC::RTC(){
 };
 
 void RTC::set_time(uint64_t epoch){
-	
+	cli();
+	seconds = (uint32_t)(epoch/1000000);
+	millis = (uint16_t)((epoch-((uint64_t)seconds*1000000))/1000);
+	micros = (uint16_t)((epoch-((uint64_t)seconds*1000000)-(millis*1000)));
+	printf("S: %lu ms: %u us %u \n", seconds, millis, micros);
+	sei();
 };
 
 uint32_t RTC::get_epoch(void){
-	return ((seconds*1000)+millis);
+	return seconds;
 };
 
 
