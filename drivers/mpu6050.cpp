@@ -151,11 +151,7 @@ void mpu6050_writeBit(uint8_t regAddr, uint8_t bitNum, uint8_t data) {
 void mpu6050_setSleepDisabled() {
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, 0);
 	//wake up delay needed sleep disabled
-	enable_power_down();
-	sleep_enable();
-	wdt_enable(WDTO_120MS);
-	wdt_INT_enable();
-	sleep_mode();
+	_delay_ms(100);
 }
 
 /*
@@ -187,11 +183,7 @@ uint8_t mpu6050_testConnection(void) {
  */
 void mpu6050_init(void) {
 	//allow mpu6050 chip clocks to start up
-	enable_power_down();
-	sleep_enable();
-	wdt_enable(WDTO_120MS);
-	wdt_INT_enable();
-	sleep_mode();
+	_delay_ms(100);
 	//set sleep disabled
 	mpu6050_setSleepDisabled();
 	// Initialize external interrupt
