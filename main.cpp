@@ -11,6 +11,7 @@
 #include <util/delay_basic.h>
 #include <stdbool.h>
 #include <avr/sleep.h>
+#include "utils.h"
 #include "drivers/power_management.h"
 #include "drivers/RN2483.h"
 #include "drivers/RTC.h"
@@ -54,9 +55,10 @@ RN2483 radio;
 const uint8_t uplink_buf_length = 10;
 uint8_t uplink_buf[uplink_buf_length];
 uint8_t* downlink_buf;
-
-
+uint64_t new_timestamp;
+uint32_t t_callback;
 int main (void){
+	printf("Booting... \n");
 	sei();
 	Leds.toogle(RED);
 	USART_init();
@@ -72,7 +74,7 @@ int main (void){
 	while (true){
 		dataadc = AnalogIn.get_battery_lvl();
 		uint32_t timestamp = rtc.get_epoch();
-		printf("Epoch: %lu \n", timestamp);
+		//printf("Epoch: %lu \n", timestamp);
 		if (true){	
 			time=0;
 			printf("Bat %d \n", dataadc);
@@ -85,12 +87,14 @@ int main (void){
 				if (radio.unread_downlink()){
 					downlink_buf = radio.read_downlink_buf();
 					for (uint8_t i = 0; i < 11; i++){
-						printf("%d ", downlink_buf[i]);
+						//printf("%d ", downlink_buf[i]);
 						}
+						//printf("\n");
+						convert_downlink(downlink_buf, new_timestamp, t_callback);
+						rtc.set_time(new_timestamp);	
 				}
 			}
-
-			printf("RTT:  %lu\n",timestamp);
+			//printf("RTT:  %lu\n",timestamp);
 			Leds.toogle(GREEN);
 			radio.sleep();
 			_delay_ms(5000);
