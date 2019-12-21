@@ -20,7 +20,8 @@ extern "C" {
 class RTC {
 	public:
 	RTC();
-	void set_time(uint64_t epoch);
+	void set_epoch(uint32_t epoch);
+	void set_time(uint64_t timestamp);
 	uint32_t get_epoch();
 	uint64_t get_timestamp();
 	protected:
