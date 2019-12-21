@@ -18,7 +18,7 @@ bool OVF2 = false;
 
 
 RTC::RTC(){
-	/* initialize timer 1 */
+	/* initialize timer 0 */
 	TIMSK0 |= (1 << TOIE0);
 	TCCR0B |= (1 << CS00);
 	TCCR0B &= ~((0 << CS02) | (0 << CS01));
@@ -30,12 +30,26 @@ RTC::RTC(){
 	time = 1000;
 };
 
-void RTC::set_time(uint64_t epoch){
+void RTC::set_time(uint64_t timestamp){
 	cli();
-	seconds = (uint32_t)(epoch/1000000);
-	millis = (uint16_t)((epoch-((uint64_t)seconds*1000000))/1000);
-	micros = (uint16_t)((epoch-((uint64_t)seconds*1000000)-(millis*1000)));
+	//Reset timer values:
+	TCNT0 = 0;
+	TCNT2 = 0;
+	seconds = (uint32_t)(timestamp/1000000);
+	millis = (uint16_t)((timestamp-((uint64_t)seconds*1000000))/1000);
+	micros = (uint16_t)((timestamp-((uint64_t)seconds*1000000)-(millis*1000)));
 	sei();
+};
+
+void RTC::set_epoch(uint32_t epoch){
+	cli();
+	//Reset timer values:
+	TCNT0 = 0;
+	TCNT2 = 0;
+	sei();
+	seconds = epoch;
+	millis = 0;
+	micros = 0;
 };
 
 uint32_t RTC::get_epoch(void){
