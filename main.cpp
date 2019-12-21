@@ -43,7 +43,7 @@ adc AnalogIn;
 RTC rtc;
 RN2483 radio;
 LED_driver LED;
-uint64_t synch_timestamp = 1576862400000000;
+uint32_t synch_timestamp = 1576945300;
 uint64_t timestamp;
 uint8_t bat;
 uint32_t sec;
@@ -118,7 +118,7 @@ ISR(PCINT1_vect){
 	cli();
 	if(!sync){
 		sync = true;
-		rtc.set_time(synch_timestamp);
+		rtc.set_epoch(synch_timestamp);
 		sei();
 		printf("Time synched! \n");
 		LED.toogle(YELLOW);
