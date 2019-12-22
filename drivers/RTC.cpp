@@ -12,8 +12,8 @@ uint32_t seconds = 0;
 uint16_t millis = 0;
 uint16_t millis_error = 0;
 uint16_t micros = 0;
-uint8_t OVF1 = 0;
-uint8_t cnt1 = 0;
+uint8_t OVF0 = 0;
+uint8_t cnt0 = 0;
 bool OVF2 = false;
 
 
@@ -63,15 +63,15 @@ uint64_t RTC::get_timestamp(void){
 
 ISR(TIMER0_OVF_vect){
 	cli();
-	OVF1 ++;
-	if (OVF1 == 7){
+	OVF0 ++;
+	if (OVF0 == 7){
 		millis++;
 		micros = 0;
-		OVF1 = 0;
-		cnt1++;
-		if (cnt1 == 52){
+		OVF0 = 0;
+		cnt0++;
+		if (cnt0 == 52){
 			millis--;
-			cnt1=0;
+			cnt0=0;
 		}
 	}
 	else  {
@@ -86,8 +86,8 @@ ISR(TIMER2_OVF_vect){
 		seconds++;
 		millis = 0;
 		micros = 0;
-		OVF1 = 0;
-		cnt1 = 0;
+		OVF0 = 0;
+		cnt0 = 0;
 		OVF2 = false;
 		
 	}
