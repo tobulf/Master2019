@@ -10,7 +10,7 @@
 #define UTILS_H_
 #include <avr/io.h>
 //#include "drivers/Debug.h"
-void convert_downlink(uint8_t* buf, uint64_t &timestamp, uint32_t &t_callback);
+void convert_sync_response(uint8_t* buf, uint64_t &timestamp, uint32_t t_callback);
 
 
 
