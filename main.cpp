@@ -26,6 +26,7 @@
 #include "drivers/mpu6050.h"
 #include "drivers/EEPROM.h"
 #include "drivers/MemoryAdresses.h"
+#include "drivers/Timer.h"
 
 
 
@@ -57,48 +58,63 @@ uint8_t uplink_buf[uplink_buf_length];
 uint8_t* downlink_buf;
 uint64_t new_timestamp;
 uint32_t t_callback;
+Timer callback_timer;
+uint32_t sec;
+uint32_t us;
+uint64_t timestamp;
+bool print = false;
+bool sync = false;
+
 int main (void){
-	printf("Booting... \n");
 	sei();
 	Leds.toogle(RED);
 	USART_init();
+	printf("Booting... \n");
 	//EEPROM_init();
 	joined = radio.init_OTAA(appEui,appKey);
 	radio.set_DR(0);
 	radio.set_duty_cycle(1, 0);
 	radio.sleep();
+	Leds.toogle(RED);
+	EICRA |= (1<<ISC11);
+	EICRA |= (1<<ISC10);
+	EIMSK |= (1<<INT1);
+	PCICR |= (1<<PCIE3);
+	PCMSK3|= (1<<PCINT31);
+	PORTD |= (0<<3) | (0<<7);
+	
 	/* Enable interrupts */
 	//sei();
-	uint8_t time = 0;
 	uint16_t dataadc = 0;
 	while (true){
 		dataadc = AnalogIn.get_battery_lvl();
-		uint32_t timestamp = rtc.get_epoch();
 		//printf("Epoch: %lu \n", timestamp);
-		if (true){	
-			time=0;
-			printf("Bat %d \n", dataadc);
+		if (!sync){	
+			//printf("Bat %d \n", dataadc);
 			Leds.toogle(GREEN);
 			radio.wake();
 			uplink_buf[1] = dataadc;
-			timestamp = rtc.get_epoch();
+			callback_timer.start();
 			if(radio.TX_bytes(uplink_buf, uplink_buf_length, 1)){
-				timestamp = rtc.get_epoch() - timestamp;
+				callback_timer.stop();
 				if (radio.unread_downlink()){
+					t_callback = callback_timer.read_us();
 					downlink_buf = radio.read_downlink_buf();
-					for (uint8_t i = 0; i < 11; i++){
-						//printf("%d ", downlink_buf[i]);
-						}
-						//printf("\n");
-						convert_downlink(downlink_buf, new_timestamp, t_callback);
-						rtc.set_time(new_timestamp);	
+					convert_sync_response(downlink_buf, new_timestamp, t_callback);
+					rtc.set_time(new_timestamp);	
+					sync = true;
 				}
 			}
-			//printf("RTT:  %lu\n",timestamp);
+			callback_timer.stop();
+			callback_timer.reset();
 			Leds.toogle(GREEN);
 			radio.sleep();
-			_delay_ms(5000);
 			}
+		if (print){
+			print = false;
+			printf("Epoch: %lu us: %lu \n",sec,us);
+		}
+		_delay_ms(1);
 		}
    }
 	
@@ -110,7 +126,19 @@ ISR(INT0_vect){
 };
 
 ISR(INT1_vect){
-	printf("Dummy interrupt \n");
+	if (sync){
+		sync = false;
+		printf("Retry sync...\n");
+	}
+};
+
+ISR(PCINT3_vect){
+	cli();
+	timestamp = rtc.get_timestamp();
+	sei();
+	sec = timestamp / 1000000;
+	us = uint32_t(timestamp-(uint64_t)sec*1000000);
+	print = true;
 };
 
 ISR(WDT_vect){
