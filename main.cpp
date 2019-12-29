@@ -72,7 +72,7 @@ int main (void){
 	printf("Booting... \n");
 	//EEPROM_init();
 	joined = radio.init_OTAA(appEui,appKey);
-	radio.set_DR(0);
+	radio.set_DR(5);
 	radio.set_duty_cycle(1, 0);
 	radio.sleep();
 	Leds.toogle(RED);
@@ -82,6 +82,7 @@ int main (void){
 	PCICR |= (1<<PCIE3);
 	PCMSK3|= (1<<PCINT31);
 	PORTD |= (0<<3) | (0<<7);
+	
 	
 	/* Enable interrupts */
 	//sei();
@@ -93,7 +94,15 @@ int main (void){
 			//printf("Bat %d \n", dataadc);
 			Leds.toogle(GREEN);
 			radio.wake();
-			uplink_buf[1] = dataadc;
+			//5, 154, 220, 62, 115, 197, 162: 1577645614 ms: 810 us: 530
+			uplink_buf[0] = 1;
+			uplink_buf[1] = 5;
+			uplink_buf[2] = 154;
+			uplink_buf[3] = 220;
+			uplink_buf[4] = 62;
+			uplink_buf[5] = 115;
+			uplink_buf[6] = 197;
+			uplink_buf[7] = 162;
 			callback_timer.start();
 			if(radio.TX_bytes(uplink_buf, uplink_buf_length, 1)){
 				callback_timer.stop();
@@ -105,6 +114,7 @@ int main (void){
 					sync = true;
 				}
 			}
+			printf("callback time: %lu \n", t_callback);
 			callback_timer.stop();
 			callback_timer.reset();
 			Leds.toogle(GREEN);

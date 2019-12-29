@@ -22,6 +22,6 @@ void convert_sync_response(uint8_t* buf, uint64_t &timestamp, uint32_t t_callbac
 	|(((uint32_t)buf[8]) << 8) 
 	| buf[9];
 	temp = temp + ((uint32_t)buf[10]*1000);
-	uint32_t downlinktime = t_callback - temp;
+	uint32_t downlinktime = t_callback - temp - 750000;
 	timestamp = timestamp + downlinktime;
 }
