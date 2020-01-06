@@ -42,10 +42,10 @@ extern "C" {
 #define clear_bit(reg, bit ) (reg &= ~(1 << bit))
 #define test_bit(reg, bit ) (reg & (1 << bit))
 
-uint16_t threshold = 0;
 bool joined = false;
 
 #define CONVERTED_DATA
+#define INTERRUPT_GYRO
 
 adc AnalogIn;
 LED_driver Leds;
@@ -55,19 +55,8 @@ int main (void){
 	sei();
 	Leds.toogle(RED);
 	USART_init();
-	//EEPROM_init();
-	//joined = radio.init_OTAA(appEui,appKey);
-	//radio.set_DR(0);
-	//radio.set_duty_cycle(1, 0);
-	//radio.sleep();
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_DEVICE_RESET_BIT, 1);
 	mpu6050_init();
-	mpu6050_normalPower_mode();
-	//mpu6050_lowPower_mode();
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 1);
-	//mpu6050_accdisabled();
-	//mpu6050_gyroEnabled();
-	//mpu6050_tempSensorDisabled();
+	mpu6050_lowPower_mode();
 	/* Enable interrupts */
 	//sei();
 	#ifdef CONVERTED_DATA	
@@ -78,6 +67,7 @@ int main (void){
 	//stopwatch.set_time_out(50);
 	uint8_t time = 0;
 	while (true){
+		#ifdef INTERRUPT_GYRO
 		#ifdef CONVERTED_DATA
 		mpu6050_getConvAccData(&a, &b, &c);
 		mpu6050_getConvTempData(&t);
@@ -128,14 +118,16 @@ int main (void){
 				#endif
 				}
 			}
+			#endif
 		}
    }
 	
 
 ISR(INT0_vect){
-	threshold++;
 	printf("Gyro interrupt \n");
-	mpu6050_set_interrupt_thrshld(threshold);
+	cli();
+	mpu6050_normalPower_mode();
+	sei();
 };
 
 ISR(INT1_vect){

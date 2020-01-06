@@ -185,6 +185,9 @@ void mpu6050_init(void) {
 	_delay_ms(100);
 	//set sleep disabled
 	mpu6050_setSleepDisabled();
+	//disable gyro and temp_sensor:
+	mpu6050_tempSensorDisabled();
+	mpu6050_gyroDisabled();
 	// Initialize external interrupt
 	mpu6050_init_interrupt();
 	//set clock source
@@ -240,7 +243,7 @@ void mpu6050_getConvAccData(double* gxds, double* gyds, double* gzds){
 	int16_t gx = 0;
 	int16_t gy = 0;
 	int16_t gz = 0;
-	mpu6050_getRawGyroData(&gx, &gy, &gz);
+	mpu6050_getRawAccData(&gx, &gy, &gz);
     *gxds = (double)(gx-MPU6050_GXOFFSET)/MPU6050_GXGAIN;
     *gyds = (double)(gy-MPU6050_GYOFFSET)/MPU6050_GYGAIN;
     *gzds = (double)(gz-MPU6050_GZOFFSET)/MPU6050_GZGAIN;
@@ -286,58 +289,28 @@ void mpu6050_set_interrupt_thrshld(uint8_t threshold) {
 
 void mpu6050_gyroEnabled(){
 	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XG_BIT, 3, 0b000);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XG_BIT, 0);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_YG_BIT, 0);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_ZG_BIT, 0);
 }
 
 void mpu6050_gyroDisabled(){
 	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XG_BIT, 3, 0b111);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XG_BIT, 1);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_YG_BIT, 1);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_ZG_BIT, 1);
 }
 
 void mpu6050_accEnabled(){
 	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XA_BIT, 3, 0b000);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XA_BIT, 0);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_YA_BIT, 0);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_ZA_BIT, 0);
 }
 
 void mpu6050_accDisabled(){
 	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XA_BIT, 3, 0b111);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XA_BIT, 1);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_YA_BIT, 1);
-	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_ZA_BIT, 1);
 }
 
 void mpu6050_lowPower_mode(){
-	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 0);
-	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, 0);
-	mpu6050_accEnabled();
-	mpu6050_writeBits(MPU6050_RA_ACCEL_CONFIG, MPU6050_ACONFIG_ACCEL_HPF_BIT, MPU6050_ACONFIG_ACCEL_HPF_LENGTH, 0);
-	mpu6050_writeBits(MPU6050_RA_CONFIG, MPU6050_CFG_DLPF_CFG_BIT, MPU6050_CFG_DLPF_CFG_LENGTH, 0);
-	mpu6050_enable_interrupt();
-	
-	mpu6050_gyroDisabled();
-	mpu6050_tempSensorDisabled();
-	
-	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR2_LP_WAKE_CTRL_BIT, 1);
-	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR2_LP_WAKE_CTRL_BIT-1, 1);
-	
-	//mpu6050_tempSensorDisabled();
-	//mpu6050_writeBits(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR2_LP_WAKE_CTRL_BIT, MPU6050_PWR2_LP_WAKE_CTRL_LENGTH, 3);
-	
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 1);
-
-	/* Enable accelerometer and disable temp+gyro */
-	
+	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, 0);
+	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2,MPU6050_PWR2_LP_WAKE_CTRL_BIT,MPU6050_PWR2_LP_WAKE_CTRL_LENGTH, 0b00);
+	mpu6050_enable_interrupt();
 }
 
 void mpu6050_normalPower_mode(){
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 0);
-	mpu6050_accEnabled();
-	mpu6050_gyroEnabled();
-	mpu6050_tempSensorEnabled();
+	mpu6050_disable_interrupt();
 }
