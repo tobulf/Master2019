@@ -22,6 +22,8 @@ Please refer to LICENSE file for licensing information.
 #include "i2cmaster.h"
 
 volatile uint8_t buffer[14];
+int MPU6050_AZOFFSET = 15200;
+int MPU6050_TEMPOFFSET = -9800;
 
 /*
  * read bytes from chip register
@@ -166,6 +168,7 @@ void mpu6050_tempSensorDisabled(void){
 
 void mpu6050_tempSensorEnabled(void){
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_TEMP_DIS_BIT, 0);
+	_delay_ms(100);
 }
  /* test connection to chip
  */
@@ -185,9 +188,11 @@ void mpu6050_init(void) {
 	_delay_ms(100);
 	//set sleep disabled
 	mpu6050_setSleepDisabled();
-	//disable gyro and temp_sensor:
+	//disable gyro and acc:
 	mpu6050_tempSensorDisabled();
 	mpu6050_gyroDisabled();
+	mpu6050_accDisabled();
+	mpu6050_accZEnabled();
 	// Initialize external interrupt
 	mpu6050_init_interrupt();
 	//set clock source
@@ -196,12 +201,12 @@ void mpu6050_init(void) {
 	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CLKSEL_BIT, MPU6050_PWR1_CLKSEL_LENGTH, MPU6050_CLOCK_PLL_XGYRO);
 	//set DLPF bandwidth to 42Hz
 	mpu6050_writeBits(MPU6050_RA_CONFIG, MPU6050_CFG_DLPF_CFG_BIT, MPU6050_CFG_DLPF_CFG_LENGTH, MPU6050_DLPF_BW_42);
-    //set sampe rate
-	mpu6050_writeByte(MPU6050_RA_SMPLRT_DIV, 4); //1khz / (1 + 4) = 200Hz
+    //set sample rate
+	mpu6050_writeByte(MPU6050_RA_SMPLRT_DIV, 49); //1khz / (1 + 49) = 20Hz
 	//set gyro range
-	mpu6050_writeBits(MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_FS_SEL_BIT, MPU6050_GCONFIG_FS_SEL_LENGTH, MPU6050_GYRO_FS);
-	//set accel range
-	mpu6050_writeBits(MPU6050_RA_ACCEL_CONFIG, MPU6050_ACONFIG_AFS_SEL_BIT, MPU6050_ACONFIG_AFS_SEL_LENGTH, MPU6050_ACCEL_FS);
+	mpu6050_writeBits(MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_FS_SEL_BIT, MPU6050_GCONFIG_FS_SEL_LENGTH, MPU6050_GYRO_FS_2000);
+	//set accel range +-2g
+	mpu6050_writeBits(MPU6050_RA_ACCEL_CONFIG, MPU6050_ACONFIG_AFS_SEL_BIT, MPU6050_ACONFIG_AFS_SEL_LENGTH, MPU6050_ACCEL_FS_2);
 	//disable multi master i2c
 	mpu6050_writeBits(MPU6050_RA_I2C_MST_CTRL, MPU6050_MULT_MST_EN_BIT, 1, 0);
 	//disable DMP
@@ -216,12 +221,10 @@ void mpu6050_getRawGyroData(int16_t* gx, int16_t* gy, int16_t* gz) {
 	*gz = (((int16_t)buffer[4]) << 8) | buffer[5];
 }
 
-void mpu6050_getRawAccData(int16_t* ax, int16_t* ay, int16_t* az) {
+void mpu6050_getRawAccData(int16_t* az) {
 	/* Read data*/
-	mpu6050_readBytes(MPU6050_RA_ACCEL_XOUT_H, 6, (uint8_t *)buffer);
-	*ax = (((int16_t)buffer[0]) << 8) | buffer[1];
-	*ay = (((int16_t)buffer[2]) << 8) | buffer[3];
-	*az = (((int16_t)buffer[4]) << 8) | buffer[5];
+	mpu6050_readBytes(MPU6050_RA_ACCEL_ZOUT_H, 2, (uint8_t *)buffer);
+	*az = (((int16_t)buffer[0]) << 8) | buffer[1];
 }
 
 void mpu6050_getRawTempData(int16_t* t) {
@@ -234,25 +237,21 @@ void mpu6050_getConvGyroData(double* axg, double* ayg, double* azg){
 	int16_t ay = 0;
 	int16_t az = 0;
 	mpu6050_getRawGyroData(&ax, &ay, &az);
-	*axg = (double)(ax-MPU6050_AXOFFSET)/MPU6050_AXGAIN;
-	*ayg = (double)(ay-MPU6050_AYOFFSET)/MPU6050_AYGAIN;
-	*azg = (double)(az-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
+	*axg = (double)(ax-MPU6050_GXOFFSET)/MPU6050_GXGAIN;
+	*ayg = (double)(ay-MPU6050_GYOFFSET)/MPU6050_GYGAIN;
+	*azg = (double)(az-MPU6050_GZOFFSET)/MPU6050_GZGAIN;
 }
 
-void mpu6050_getConvAccData(double* gxds, double* gyds, double* gzds){
-	int16_t gx = 0;
-	int16_t gy = 0;
+void mpu6050_getConvAccData(int* gzds){
 	int16_t gz = 0;
-	mpu6050_getRawAccData(&gx, &gy, &gz);
-    *gxds = (double)(gx-MPU6050_GXOFFSET)/MPU6050_GXGAIN;
-    *gyds = (double)(gy-MPU6050_GYOFFSET)/MPU6050_GYGAIN;
-    *gzds = (double)(gz-MPU6050_GZOFFSET)/MPU6050_GZGAIN;
+	mpu6050_getRawAccData(&gz);
+    *gzds = (int)(gz-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
 }
 
-void mpu6050_getConvTempData(double*ta){
+void mpu6050_getConvTempData(int*ta){
 	int16_t  t = 0;
 	mpu6050_getRawTempData(&t);
-	*ta  = (double)(t-MPU6050_TEMPOFFSET)/MPU6050_TEMPGAIN;
+	*ta  = (int)(t-MPU6050_TEMPOFFSET)/MPU6050_TEMPGAIN;
 }
 
 /* Added a driver for motion detection interrupt. Found on a arduino forum: https://forum.arduino.cc/index.php?topic=364758.0 */
@@ -278,14 +277,30 @@ void mpu6050_disable_interrupt(){
 	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x00);
 }
 
-void mpu6050_enable_interrupt(){
+void mpu6050_enable_motion_interrupt(){
 	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x40);
 }
 
-void mpu6050_set_interrupt_thrshld(uint8_t threshold) {
+void mpu6050_enable_RAW_RDY_interrupt(){
+	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x01);
+}
+
+uint8_t mpu6050_get_interrupt_status(){
+	uint8_t status = 0;
+	mpu6050_readByte(MPU6050_RA_INT_STATUS, &status);
+	return status;
+}
+
+void mpu6050_set_interrupt_mot_thrshld(uint8_t threshold) {
 	/*LSB = 4mg, range: 0 - 1020mg*/
 	mpu6050_writeByte(MPU6050_RA_MOT_THR, threshold);
 }
+
+void mpu6050_set_interrupt_mot_dur(uint8_t duration) {
+	/*LSB = 4mg, range: 0 - 255ms*/
+	mpu6050_writeByte(MPU6050_RA_MOT_DUR,duration);
+}
+
 
 void mpu6050_gyroEnabled(){
 	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XG_BIT, 3, 0b000);
@@ -303,14 +318,21 @@ void mpu6050_accDisabled(){
 	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_XA_BIT, 3, 0b111);
 }
 
+void mpu6050_accZEnabled(){
+	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_ZA_BIT, 1, 0b0);
+}
+
+void mpu6050_accZDisabled(){
+	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2, MPU6050_PWR2_STBY_ZA_BIT, 1, 0b1);
+}
+
 void mpu6050_lowPower_mode(){
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 1);
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, 0);
-	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2,MPU6050_PWR2_LP_WAKE_CTRL_BIT,MPU6050_PWR2_LP_WAKE_CTRL_LENGTH, 0b00);
-	mpu6050_enable_interrupt();
+	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2,MPU6050_PWR2_LP_WAKE_CTRL_BIT,MPU6050_PWR2_LP_WAKE_CTRL_LENGTH, 0b10);
 }
 
 void mpu6050_normalPower_mode(){
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 0);
-	mpu6050_disable_interrupt();
+	mpu6050_tempSensorEnabled();
 }

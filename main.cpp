@@ -56,26 +56,22 @@ int main (void){
 	Leds.toogle(RED);
 	USART_init();
 	mpu6050_init();
-	mpu6050_lowPower_mode();
+	//mpu6050_lowPower_mode();
+	mpu6050_normalPower_mode();
 	/* Enable interrupts */
 	//sei();
 	#ifdef CONVERTED_DATA	
-	double a = 0;double b = 0;double c = 0;double d = 0;double e = 0;double f = 0;double t = 0;
+	int c = 0;int t = 0;
 	#else
-	int16_t a = 0;int16_t b = 0;int16_t c = 0;int16_t d = 0;int16_t e = 0;int16_t f = 0;int16_t t = 0;
+	int16_t c = 0;int16_t t = 0;
 	#endif
 	//stopwatch.set_time_out(50);
 	uint8_t time = 0;
 	while (true){
 		#ifdef INTERRUPT_GYRO
 		#ifdef CONVERTED_DATA
-		mpu6050_getConvAccData(&a, &b, &c);
+		mpu6050_getConvAccData(&c);
 		mpu6050_getConvTempData(&t);
-		mpu6050_getConvGyroData(&d, &e, &f);
-		#else
-		mpu6050_getRawGyroData(&a, &b, &c);
-		mpu6050_getRawTempData(&t);
-		mpu6050_getRawAccData(&d, &e, &f);
 		#endif
 		if (true){	
 			time++;
@@ -84,37 +80,12 @@ int main (void){
 				time=0;
 				//printf("%s %i \n", "Adc:", dataadc);
 				#ifdef CONVERTED_DATA
-				mpu6050_getConvAccData(&a, &b, &c);
+				mpu6050_getConvAccData(&c);
 				mpu6050_getConvTempData(&t);
-				mpu6050_getConvGyroData(&d, &e, &f);
-				//mpu6050_getConvTempData(&t);
-				//mpu6050_getConvGyroData(&d, &e, &f);
 				_delay_ms(10);
-				int a2 = (int)(a + 0.5 - (a<0));
-				int b2 = (int)(b + 0.5 - (b<0));
 				int c2 = (int)(c + 0.5 - (c<0));
 				int t2 = (int)(t + 0.5 - (t<0));
-				int d2 = (int)(d + 0.5 - (d<0));
-				int e2 = (int)(e + 0.5 - (e<0));
-				int f2 = (int)(f + 0.5 - (f<0));
-				printf("ax: %i ay: %i az: %i temp: %i gx: %i gy: %i gz: %i \n", a2, b2, c2, t2, d2, e2, f2);
-				#else
-				mpu6050_getRawAccData(&a, &b, &c);
-				mpu6050_getRawTempData(&t);
-				mpu6050_getRawGyroData(&d, &e, &f);
-				_delay_ms(10);
-				printf("ax: %i ay: %i az: %i ", a2, b2, c2);
-				//printf("temp: %i ", t2);
-				//printf("gx: %i gy: %i gz: %i", d2, e2, f2);
-				printf("\n");
-				mpu6050_getRawAccData(&a, &b, &c);
-				//mpu6050_getRawTempData(&t);
-				//mpu6050_getRawGyroData(&d, &e, &f);
-				_delay_ms(10);
-				printf("ax: %i ay: %i az: %i ", a, b, c);
-				//printf("temp: %i ", t);
-				//printf("gx: %i gy: %i gz: %i ", d, e, f);
-				printf(" \n");
+				//printf("az: %i temp: %i \n", c2, t2);
 				#endif
 				}
 			}
@@ -124,10 +95,21 @@ int main (void){
 	
 
 ISR(INT0_vect){
-	printf("Gyro interrupt \n");
 	cli();
-	mpu6050_normalPower_mode();
+	uint8_t interrupt = mpu6050_get_interrupt_status();
+	Leds.toogle(RED);
+	if ((interrupt & (1 << 6))){
+		printf("Motion interrupt %d \n", interrupt);
+		mpu6050_enable_RAW_RDY_interrupt();
+
+	}
+	else{
+		printf("Data rdy %d \n", interrupt);
+		_delay_ms(1000);
+		mpu6050_enable_motion_interrupt();
+	}
 	sei();
+	//mpu6050_enable_RAW_RDY_interrupt();
 };
 
 ISR(INT1_vect){
