@@ -11,7 +11,6 @@
 #include <util/delay_basic.h>
 #include <stdbool.h>
 #include <avr/sleep.h>
-#include "utils.h"
 #include "drivers/power_management.h"
 #include "drivers/RN2483.h"
 #include "drivers/RTC.h"
@@ -26,7 +25,6 @@
 #include "drivers/mpu6050.h"
 #include "drivers/EEPROM.h"
 #include "drivers/MemoryAdresses.h"
-#include "drivers/Timer.h"
 
 
 
@@ -51,80 +49,85 @@ bool joined = false;
 
 adc AnalogIn;
 LED_driver Leds;
-RTC rtc;
 RN2483 radio;
-const uint8_t uplink_buf_length = 10;
-uint8_t uplink_buf[uplink_buf_length];
-uint8_t* downlink_buf;
-uint64_t new_timestamp;
-uint32_t t_callback;
-Timer callback_timer;
-uint32_t sec;
-uint32_t us;
-uint64_t timestamp;
-bool print = false;
-bool sync = false;
 
 int main (void){
 	sei();
 	Leds.toogle(RED);
 	USART_init();
-	printf("Booting... \n");
 	//EEPROM_init();
-	joined = radio.init_OTAA(appEui,appKey);
-	radio.set_DR(5);
-	radio.set_duty_cycle(1, 0);
-	radio.sleep();
-	Leds.toogle(RED);
-	EICRA |= (1<<ISC11);
-	EICRA |= (1<<ISC10);
-	EIMSK |= (1<<INT1);
-	PCICR |= (1<<PCIE3);
-	PCMSK3|= (1<<PCINT31);
-	PORTD |= (0<<3) | (0<<7);
-	
-	
+	//joined = radio.init_OTAA(appEui,appKey);
+	//radio.set_DR(0);
+	//radio.set_duty_cycle(1, 0);
+	//radio.sleep();
+	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_DEVICE_RESET_BIT, 1);
+	mpu6050_init();
+	mpu6050_normalPower_mode();
+	//mpu6050_lowPower_mode();
+	//mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 1);
+	//mpu6050_accdisabled();
+	//mpu6050_gyroEnabled();
+	//mpu6050_tempSensorDisabled();
 	/* Enable interrupts */
 	//sei();
-	uint16_t dataadc = 0;
+	#ifdef CONVERTED_DATA	
+	double a = 0;double b = 0;double c = 0;double d = 0;double e = 0;double f = 0;double t = 0;
+	#else
+	int16_t a = 0;int16_t b = 0;int16_t c = 0;int16_t d = 0;int16_t e = 0;int16_t f = 0;int16_t t = 0;
+	#endif
+	//stopwatch.set_time_out(50);
+	uint8_t time = 0;
 	while (true){
-		dataadc = AnalogIn.get_battery_lvl();
-		//printf("Epoch: %lu \n", timestamp);
-		if (!sync){	
-			//printf("Bat %d \n", dataadc);
-			Leds.toogle(GREEN);
-			radio.wake();
-			//5, 154, 220, 62, 115, 197, 162: 1577645614 ms: 810 us: 530
-			uplink_buf[0] = 1;
-			uplink_buf[1] = 5;
-			uplink_buf[2] = 154;
-			uplink_buf[3] = 220;
-			uplink_buf[4] = 62;
-			uplink_buf[5] = 115;
-			uplink_buf[6] = 197;
-			uplink_buf[7] = 162;
-			callback_timer.start();
-			if(radio.TX_bytes(uplink_buf, uplink_buf_length, 1)){
-				callback_timer.stop();
-				if (radio.unread_downlink()){
-					t_callback = callback_timer.read_us();
-					downlink_buf = radio.read_downlink_buf();
-					convert_sync_response(downlink_buf, new_timestamp, t_callback);
-					rtc.set_time(new_timestamp);	
-					sync = true;
+		#ifdef CONVERTED_DATA
+		mpu6050_getConvAccData(&a, &b, &c);
+		mpu6050_getConvTempData(&t);
+		mpu6050_getConvGyroData(&d, &e, &f);
+		#else
+		mpu6050_getRawGyroData(&a, &b, &c);
+		mpu6050_getRawTempData(&t);
+		mpu6050_getRawAccData(&d, &e, &f);
+		#endif
+		if (true){	
+			time++;
+			uint8_t data = mpu6050_testConnection();
+			if(data && time==1){
+				time=0;
+				//printf("%s %i \n", "Adc:", dataadc);
+				#ifdef CONVERTED_DATA
+				mpu6050_getConvAccData(&a, &b, &c);
+				mpu6050_getConvTempData(&t);
+				mpu6050_getConvGyroData(&d, &e, &f);
+				//mpu6050_getConvTempData(&t);
+				//mpu6050_getConvGyroData(&d, &e, &f);
+				_delay_ms(10);
+				int a2 = (int)(a + 0.5 - (a<0));
+				int b2 = (int)(b + 0.5 - (b<0));
+				int c2 = (int)(c + 0.5 - (c<0));
+				int t2 = (int)(t + 0.5 - (t<0));
+				int d2 = (int)(d + 0.5 - (d<0));
+				int e2 = (int)(e + 0.5 - (e<0));
+				int f2 = (int)(f + 0.5 - (f<0));
+				printf("ax: %i ay: %i az: %i temp: %i gx: %i gy: %i gz: %i \n", a2, b2, c2, t2, d2, e2, f2);
+				#else
+				mpu6050_getRawAccData(&a, &b, &c);
+				mpu6050_getRawTempData(&t);
+				mpu6050_getRawGyroData(&d, &e, &f);
+				_delay_ms(10);
+				printf("ax: %i ay: %i az: %i ", a2, b2, c2);
+				//printf("temp: %i ", t2);
+				//printf("gx: %i gy: %i gz: %i", d2, e2, f2);
+				printf("\n");
+				mpu6050_getRawAccData(&a, &b, &c);
+				//mpu6050_getRawTempData(&t);
+				//mpu6050_getRawGyroData(&d, &e, &f);
+				_delay_ms(10);
+				printf("ax: %i ay: %i az: %i ", a, b, c);
+				//printf("temp: %i ", t);
+				//printf("gx: %i gy: %i gz: %i ", d, e, f);
+				printf(" \n");
+				#endif
 				}
 			}
-			printf("callback time: %lu \n", t_callback);
-			callback_timer.stop();
-			callback_timer.reset();
-			Leds.toogle(GREEN);
-			radio.sleep();
-			}
-		if (print){
-			print = false;
-			printf("Epoch: %lu us: %lu \n",sec,us);
-		}
-		_delay_ms(1);
 		}
    }
 	
@@ -136,21 +139,8 @@ ISR(INT0_vect){
 };
 
 ISR(INT1_vect){
-	if (sync){
-		sync = false;
-		printf("Retry sync...\n");
-	}
+	printf("Dummy interrupt \n");
 };
-
-ISR(PCINT3_vect){
-	cli();
-	timestamp = rtc.get_timestamp();
-	sei();
-	sec = timestamp / 1000000;
-	us = uint32_t(timestamp-(uint64_t)sec*1000000);
-	print = true;
-};
-
 ISR(WDT_vect){
 	wdt_disable();
 	sleep_disable();
