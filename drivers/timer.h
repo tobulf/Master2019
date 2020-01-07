@@ -12,7 +12,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdbool.h>
-#include "Debug.h"
 
 enum TIMER {TIM1=1, TIM3=3, TIM4=4};
 
