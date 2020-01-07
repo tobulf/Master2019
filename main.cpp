@@ -11,10 +11,11 @@
 #include <util/delay_basic.h>
 #include <stdbool.h>
 #include <avr/sleep.h>
+#include <util/atomic.h>
 #include "drivers/power_management.h"
+#include "drivers/Timer.h"
 #include "drivers/RN2483.h"
 #include "drivers/RTC.h"
-#include "drivers/SPI_driver.h"
 #include "drivers/LED_driver.h"
 #include "drivers/LoRa_cfg.h"
 #include "drivers/ADC.h"
@@ -37,19 +38,46 @@ extern "C" {
 
 };
 
-/* Handy macros: */
-#define set_bit(reg, bit ) (reg |= (1 << bit))
-#define clear_bit(reg, bit ) (reg &= ~(1 << bit))
-#define test_bit(reg, bit ) (reg & (1 << bit))
+enum STATE {ACTIVE=1, SLEEP, DMY_EVENT, ACC_EVENT};
+STATE cur_state;
+STATE prev_state;
 
 bool joined = false;
-
-#define CONVERTED_DATA
-#define INTERRUPT_GYRO
+bool acc_buf_full = false;
+int16_t acc_data;
+uint8_t acc_sample = 0;
+int16_t acc_data_buf[20];
 
 adc AnalogIn;
 LED_driver Leds;
 RN2483 radio;
+RTC rtc;
+Timer timer;
+
+void handle_acc_event(){
+	Leds.turn_on(YELLOW);
+	_delay_ms(10);
+	mpu6050_enable_data_rdy_interrupt();
+	uint32_t timestamp=rtc.get_epoch();
+	mpu6050_enable_pin_interrupt();
+	timer.start();
+	while(!acc_buf_full){
+		_delay_us(1);
+		};
+	acc_buf_full = false;
+	timer.stop();
+	STATE temp = cur_state;
+	cur_state = prev_state;
+	prev_state = temp;
+	printf("Sample: ");
+	for (uint8_t i = 0; i<19;i++){
+		printf("%i ",acc_data_buf[i]);
+	}
+	printf("us: %lu\n",timer.read_us());
+	timer.reset();
+	mpu6050_enable_motion_interrupt();
+	mpu6050_enable_pin_interrupt();
+}
 
 int main (void){
 	sei();
@@ -58,58 +86,80 @@ int main (void){
 	mpu6050_init();
 	//mpu6050_lowPower_mode();
 	mpu6050_normalPower_mode();
-	/* Enable interrupts */
-	//sei();
-	#ifdef CONVERTED_DATA	
-	int c = 0;int t = 0;
-	#else
-	int16_t c = 0;int16_t t = 0;
-	#endif
-	//stopwatch.set_time_out(50);
-	uint8_t time = 0;
+	mpu6050_set_interrupt_mot_thrshld(25);
+	mpu6050_enable_motion_interrupt();
+	mpu6050_enable_pin_interrupt();
+	cur_state = ACTIVE;
+	prev_state = ACTIVE;
+	Leds.toogle(RED);
 	while (true){
-		#ifdef INTERRUPT_GYRO
-		#ifdef CONVERTED_DATA
-		mpu6050_getConvAccData(&c);
-		mpu6050_getConvTempData(&t);
-		#endif
-		if (true){	
-			time++;
-			uint8_t data = mpu6050_testConnection();
-			if(data && time==1){
-				time=0;
-				//printf("%s %i \n", "Adc:", dataadc);
-				#ifdef CONVERTED_DATA
-				mpu6050_getConvAccData(&c);
-				mpu6050_getConvTempData(&t);
-				_delay_ms(10);
-				int c2 = (int)(c + 0.5 - (c<0));
-				int t2 = (int)(t + 0.5 - (t<0));
-				//printf("az: %i temp: %i \n", c2, t2);
-				#endif
+		switch (cur_state){
+			case ACTIVE:
+				Leds.turn_on(GREEN);
+				if (prev_state!=ACTIVE){
+					//wait, might be more acc_events...
+					_delay_ms(1000);
+					prev_state = ACTIVE;
+					Leds.reset();
+					break;
 				}
+				else{
+					_delay_ms(1);
+				}
+				
+				break;
+			case SLEEP:
+				if(cur_state!=SLEEP){
+					break;
+				}
+				else{
+					//check for sync here.(set sync=false;)
+					enable_power_save();
+					sleep_enable();
+					sleep_mode();
+				}	
+				break;
+			case ACC_EVENT:
+				handle_acc_event();
+ 				break;
+			case DMY_EVENT:
+				break;
+			default:
+				break;
 			}
-			#endif
 		}
-   }
+	}
 	
 
 ISR(INT0_vect){
 	cli();
+	mpu6050_disable_pin_interrupt();
+	sei();
+	mpu6050_disable_interrupt();
 	uint8_t interrupt = mpu6050_get_interrupt_status();
-	Leds.toogle(RED);
-	if ((interrupt & (1 << 6))){
-		printf("Motion interrupt %d \n", interrupt);
-		mpu6050_enable_RAW_RDY_interrupt();
-
+	if ((interrupt & (1 << 6)) && cur_state!=ACC_EVENT){
+		prev_state = cur_state;
+		cur_state = ACC_EVENT;
+	}
+	else if(interrupt!=0){
+		if (acc_sample<20){
+			mpu6050_getConvAccData(&acc_data);
+			acc_data_buf[acc_sample] = acc_data;
+			acc_sample++;
+			mpu6050_enable_interrupt();
+			mpu6050_enable_pin_interrupt();
+		}
+		else{
+			acc_sample = 0;
+			acc_buf_full = true;
+			mpu6050_disable_pin_interrupt();
+		}
 	}
 	else{
-		printf("Data rdy %d \n", interrupt);
-		_delay_ms(1000);
-		mpu6050_enable_motion_interrupt();
+		mpu6050_enable_pin_interrupt();
+		mpu6050_enable_interrupt();
 	}
-	sei();
-	//mpu6050_enable_RAW_RDY_interrupt();
+
 };
 
 ISR(INT1_vect){
