@@ -24,7 +24,7 @@ Please refer to LICENSE file for licensing information.
 volatile uint8_t buffer[14];
 int MPU6050_AZOFFSET = 15200;
 int MPU6050_TEMPOFFSET = -9800;
-
+uint8_t interrupt_byte;
 /*
  * read bytes from chip register
  */
@@ -162,6 +162,10 @@ void mpu6050_setSleepEnabled(void) {
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, 1);
 }
 
+void mpu6050_reset(){
+	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_DEVICE_RESET_BIT, 1);
+}
+
 void mpu6050_tempSensorDisabled(void){
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_TEMP_DIS_BIT, 1);
 }
@@ -242,26 +246,27 @@ void mpu6050_getConvGyroData(double* axg, double* ayg, double* azg){
 	*azg = (double)(az-MPU6050_GZOFFSET)/MPU6050_GZGAIN;
 }
 
-void mpu6050_getConvAccData(int* gzds){
+void mpu6050_getConvAccData(int16_t* gzds){
 	int16_t gz = 0;
 	mpu6050_getRawAccData(&gz);
-    *gzds = (int)(gz-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
+    *gzds = (int16_t)(gz-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
 }
 
-void mpu6050_getConvTempData(int*ta){
+void mpu6050_getConvTempData(int16_t*ta){
 	int16_t  t = 0;
 	mpu6050_getRawTempData(&t);
-	*ta  = (int)(t-MPU6050_TEMPOFFSET)/MPU6050_TEMPGAIN;
+	*ta  = (int16_t)(t-MPU6050_TEMPOFFSET)/MPU6050_TEMPGAIN;
 }
 
 /* Added a driver for motion detection interrupt. Found on a arduino forum: https://forum.arduino.cc/index.php?topic=364758.0 */
 
 void mpu6050_init_interrupt() {
 	/* Enable ext-interrupt ISR0: */
-	EICRA |= (1<<ISC00);
+	EICRA &= ~(1<<ISC00);
 	EICRA &= ~(1<<ISC01);
-	EIMSK |= (1<<INT0);
+	DDRD  |= (0<<2);
 	PORTD |= (0<<2);
+	MCUCR &= ~(1<<PUD);
 	/* Motion duration: LSB = 1ms */
 	mpu6050_writeByte(MPU6050_RA_MOT_DUR,1);
 	/* Motion threshold: 0x20 default, LSB = 4mg */
@@ -277,12 +282,25 @@ void mpu6050_disable_interrupt(){
 	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x00);
 }
 
-void mpu6050_enable_motion_interrupt(){
-	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x40);
+void mpu6050_enable_interrupt(){
+	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,interrupt_byte);
 }
 
-void mpu6050_enable_RAW_RDY_interrupt(){
+void mpu6050_disable_pin_interrupt(){
+	EIMSK &= ~(1<<INT0);
+}
+void mpu6050_enable_pin_interrupt(){
+	EIMSK |= (1<<INT0);
+}
+
+void mpu6050_enable_motion_interrupt(){
+	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x40);
+	interrupt_byte = 0x40;
+}
+
+void mpu6050_enable_data_rdy_interrupt(){
 	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x01);
+	interrupt_byte = 0x01;
 }
 
 uint8_t mpu6050_get_interrupt_status(){

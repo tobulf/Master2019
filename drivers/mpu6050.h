@@ -19,8 +19,6 @@ References:
 
 #include <avr/io.h>
 #include "mpu6050registers.h"
-#include "power_management.h"
-#include "WDT.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,6 +84,7 @@ void mpu6050_getConvTempData(int*ta);
 
 extern void mpu6050_setSleepDisabled(void);
 extern void mpu6050_setSleepEnabled(void);
+void mpu6050_reset(void);
 void mpu6050_tempSensorDisabled(void);
 void mpu6050_tempSensorEnabled(void);
 
@@ -101,9 +100,12 @@ void mpu6050_init_interrupt(void);
 void mpu6050_set_interrupt_mot_thrshld(uint8_t threshold);
 void mpu6050_set_interrupt_mot_dur(uint8_t duration);
 void mpu6050_enable_motion_interrupt(void);
-void mpu6050_enable_RAW_RDY_interrupt(void);
+void mpu6050_enable_data_rdy_interrupt(void);
 uint8_t mpu6050_get_interrupt_status(void);
 void mpu6050_disable_interrupt(void);
+void mpu6050_enable_interrupt(void);
+void mpu6050_disable_pin_interrupt(void);
+void mpu6050_enable_pin_interrupt(void);
 void mpu6050_gyroEnabled(void);
 void mpu6050_gyroDisabled(void);
 void mpu6050_accEnabled(void);
