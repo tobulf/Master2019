@@ -32,7 +32,6 @@ void LED_driver::reset(){
 
 
 void LED_driver::toogle(led color){
-    
     switch (color){
         case GREEN:
             PORTB ^= (1 << GREEN);
@@ -51,8 +50,24 @@ void LED_driver::toogle(led color){
     }
 };
 
+void LED_driver::turn_on(led color){
+	switch (color){
+		case GREEN:
+		PORTB |= (1 << GREEN);
+		break;
+		
+		case RED:
+		PORTB |= (1 << RED);
+		break;
 
+		case YELLOW:
+		PORTB |= (1 << YELLOW);
+		break;
 
+		default:
+		break;
+	}
+};
 
 void LED_driver::timed_toogle(led color, int ms){
     toogle(color);

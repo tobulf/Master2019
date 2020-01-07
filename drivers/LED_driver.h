@@ -42,6 +42,12 @@ public:
      * @param color 
      */
     void toogle(led color);
+	 /**
+     * @brief Turn on one led.
+     * 
+     * @param color 
+     */
+	void turn_on(led color);
     /**
      * @brief Turn all leds off.
      * 
