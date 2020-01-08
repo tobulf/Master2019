@@ -26,6 +26,7 @@
 #include "drivers/mpu6050.h"
 #include "drivers/EEPROM.h"
 #include "drivers/MemoryAdresses.h"
+#include "EventQueue.h"
 
 
 
@@ -35,7 +36,6 @@
 
 extern "C" {
 	#include "drivers/Debug.h"
-
 };
 
 enum STATE {ACTIVE=1, SLEEP, DMY_EVENT, ACC_EVENT};
@@ -53,27 +53,43 @@ LED_driver Leds;
 RN2483 radio;
 RTC rtc;
 Timer timer;
+EventQueue queue;
 
 void handle_acc_event(){
 	Leds.turn_on(YELLOW);
 	_delay_ms(10);
 	mpu6050_enable_data_rdy_interrupt();
-	uint32_t timestamp=rtc.get_epoch();
+	uint32_t timestamp = 0/*rtc.get_epoch()*/;
 	mpu6050_enable_pin_interrupt();
 	timer.start();
 	while(!acc_buf_full){
-		_delay_us(1);
-		};
+		if (queue.length()>=2){
+				Leds.toogle(RED);
+				radio.set_RX_window_size(0);
+				uint8_t* data = queue.pop_event();
+				queue.pop_event();
+				radio.TX_bytes(data, 88, 1);
+				Leds.toogle(RED);
+				radio.set_RX_window_size(1000);
+		}
+	};
+	
 	acc_buf_full = false;
+	queue.push_event(timestamp, acc_data_buf);
 	timer.stop();
 	STATE temp = cur_state;
 	cur_state = prev_state;
 	prev_state = temp;
 	printf("Sample: ");
-	for (uint8_t i = 0; i<19;i++){
+	for (uint8_t i = 0; i<20;i++){
 		printf("%i ",acc_data_buf[i]);
 	}
 	printf("us: %lu\n",timer.read_us());
+	printf("Events left: %d \n", queue.length());
+	//for (uint8_t n = 0; n<44;n++){
+	//	printf("%d ", data[n]);
+	//}
+	//printf("\n");
 	timer.reset();
 	mpu6050_enable_motion_interrupt();
 	mpu6050_enable_pin_interrupt();
@@ -84,6 +100,12 @@ int main (void){
 	Leds.toogle(RED);
 	USART_init();
 	mpu6050_init();
+	joined = radio.init_OTAA(appEui,appKey);
+	if (!joined){
+		Leds.toogle(YELLOW);
+	}
+	radio.set_DR(5);
+	radio.set_duty_cycle(1, 0);
 	//mpu6050_lowPower_mode();
 	mpu6050_normalPower_mode();
 	mpu6050_set_interrupt_mot_thrshld(25);

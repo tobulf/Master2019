@@ -10,7 +10,6 @@
 
 uint32_t seconds = 0;
 uint16_t millis = 0;
-uint16_t millis_error = 0;
 uint16_t micros = 0;
 uint8_t OVF0 = 0;
 uint8_t cnt0 = 0;

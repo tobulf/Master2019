@@ -6,7 +6,6 @@
  */ 
 #include "utils.h"
 #include "drivers/Debug.h"
-#include <inttypes.h>
 
 void convert_sync_response(uint8_t* buf, uint64_t &timestamp, uint32_t t_callback){
 	timestamp = (((uint64_t)0x00) << 56)
