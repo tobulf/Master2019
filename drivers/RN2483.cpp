@@ -8,10 +8,10 @@
 /* Declare UART Message terminators: */
 #define LF (uint8_t)10
 #define CR (uint8_t)13
-/* Macros */
-#define set_bit(reg, bit ) (reg |= (1 << bit))
-#define clear_bit(reg, bit ) (reg &= ~(1 << bit))
-#define test_bit(reg, bit ) (reg & (1 << bit))
+
+uint8_t buf_index = 0;
+char buf[50];
+bool buf_rdy = false;
 
 unsigned char LoRa_COM::receive(void){
 	/* Wait for data to be received:*/
@@ -22,37 +22,42 @@ unsigned char LoRa_COM::receive(void){
 
 
 String LoRa_COM::get_answer(bool sleep){
-	 String received;
-	 unsigned char byte;
-	 if(sleep){
-		/* enable Uart interrupt and Idle sleep mode */
-		enable_RX_int();
+	enable_RX_int();
+	String received;
+	if(sleep){
+	///* enable Uart interrupt and Idle sleep mode */
+	//enable_RX_int();
 		enable_idle();
 		sleep_enable();
 		sleep_mode();
-	 };
-	 /*receive bytes and put them in a string: */
-	 while( (byte = receive()) >= LF){
-		 /*CR+LF termination: */
-		 if(byte == CR){
-		 	 /*Empty the buffer before breaking.*/
-		 	 byte = receive();
-		 	 break;
-		 }
-		 /* Merge the bytes together to a string: */
-		 received.concat((char)byte);
-	 }; 
-	 return received;
+	};
+	/*receive bytes and put them in a string: */
+	while(!buf_rdy){
+		 _delay_us(1);
+	};
+	buf_rdy=false;
+	for (uint8_t i = 0;;i++){
+		if (buf[i]!=CR){
+			received.concat(buf[i]);
+		}
+		else{
+			break;
+		}
+	}
+	//printf("%s", received.c_str());
+	return received;
  };
 	
 	
-void LoRa_COM::send_command(String command){
+void LoRa_COM::send_command(String command, bool terminated){
 	for(uint16_t i = 0; i < command.length();i++){
 		transmit(command[i]);
 	}
 	/*Terminate using CR-LF*/
-	transmit(CR);
-	transmit(LF);
+	if (terminated){
+		transmit(CR);
+		transmit(LF);
+	}	
 };
 
 
@@ -86,7 +91,7 @@ void LoRa_COM::send_break(void){
 	/* Set TXD0 to output */
 	DDRD |= (1<<DDRD1);
 	/* Set port low to enable AUTOBAUD */
-	clear_bit(PORTD, 1);
+	PORTD &= ~(1<<1);
 	_delay_ms(10);
 	/* Reset TX pin */
 	DDRD &= ~(1<<DDRD1);
@@ -100,30 +105,31 @@ void LoRa_COM::send_break(void){
 };
 
 LoRa_COM::LoRa_COM(){
-		UCSR0B = 0x00;
-		UCSR0C = 0x06;
-		/*Delay in case of force Reset */
-		_delay_ms(100);
-		/* Set TXD0 to output */
-		DDRD |= (1<<DDRD1);
-		/* Set port low to enable AUTOBAUD */
-		clear_bit(PORTD, 1);
-		_delay_ms(10);
-		/* Reset TX pin */
-		DDRD &= ~(1<<DDRD1);
-		_delay_us(10);
-		/*Calculate ubbr: */
-		unsigned int ubrr = (F_CPU/(16*LORA_BAUD))-1U;
-		/*Set baud rate */
-		UBRR0H = (unsigned char)(ubrr>>8);
-		UBRR0L = (unsigned char)ubrr;
-		/* Enable receiver and transmitter */
-		UCSR0B = (1<<RXEN)|(1<<TXEN);
-		/* Set frame format:  2stop bit, 8data*/
-		UCSR0C = (1<<USBS)|(3<<UCSZ0);
-		transmit(85);
-		transmit(85);
-		UART_flush();
+	sei();
+	UCSR0B = 0x00;
+	UCSR0C = 0x06;
+	/*Delay in case of force Reset */
+	_delay_ms(100);
+	/* Set TXD0 to output */
+	DDRD |= (1<<DDRD1);
+	/* Set port low to enable AUTOBAUD */
+	PORTD &= ~(1<<1);
+	_delay_ms(10);
+	/* Reset TX pin */
+	DDRD &= ~(1<<DDRD1);
+	_delay_us(10);
+	/*Calculate ubbr: */
+	unsigned int ubrr = (F_CPU/(16*LORA_BAUD))-1U;
+	/*Set baud rate */
+	UBRR0H = (unsigned char)(ubrr>>8);
+	UBRR0L = (unsigned char)ubrr;
+	/* Enable receiver and transmitter */
+	UCSR0B = (1<<RXEN)|(1<<TXEN) | (1<<RXCIE);
+	/* Set frame format:  2stop bit, 8data*/
+	UCSR0C = (1<<USBS)|(3<<UCSZ0);
+	transmit(85);
+	transmit(85);
+	UART_flush();
 };
 
 RN2483::RN2483(){
@@ -142,48 +148,59 @@ String RN2483::get_version(){
 
 
 bool RN2483::assert_response(String response){
-	if(response != String("ok")){
+	if(response.charAt(1) == 111){
+		return true;
+	}
+	else{
 		return false;
 	}
-	return true;
 }
 
 
 bool RN2483::init_OTAA(String app_EUI, String app_key){
-	bool success = true;
+	bool success = false;
 	String answer;
 	/*Reset chip and set to 868.*/
+	_delay_ms(100);
 	send_command("mac reset 868");
-	if (!assert_response(get_answer())){return false;};
+	answer = get_answer();
+	if (!assert_response(answer)){return false;};
 	/*Get device EUI*/
 	send_command("sys get hweui");
 	answer = get_answer();
+	answer.trim();
 	/*Set the device EUI*/
 	send_command(String("mac set deveui ")+=answer);
-	if (!assert_response(get_answer())){return false;};
+	answer = get_answer();
+	if (!assert_response(answer)){return false;};
 	/* Set the application EUI*/
 	send_command(String("mac set appeui ")+=app_EUI);
-	if (!assert_response(get_answer())){return false;};
+	answer = get_answer();
+	if (!assert_response(answer)){return false;};
 	/* Set Appkey.*/
 	send_command(String("mac set appkey ")+=app_key);
-	if (!assert_response(get_answer())){return false;};
+	answer = get_answer();
+	if (!assert_response(answer)){return false;};
 	/*Set powerindex to 1, for 863 MHz(0 for 433 MHz.)*/
 	send_command(String("mac set pwridx 1"));
-	if (!assert_response(get_answer())){return false;};
+	answer = get_answer();
+	if (!assert_response(answer)){return false;};
 	/* TTN does not support adaptive data-rate, thus it is turned off.*/
 	send_command(String("mac set adr off"));
-	if (!assert_response(get_answer())){return false;};
+	answer = get_answer();
+	if (!assert_response(answer)){return false;};
 	/*Save current settings on the RN2483.*/
 	send_command(String("mac save"));
-	if (!assert_response(get_answer())){return false;};
+	answer = get_answer();
+	if (!assert_response(answer)){return false;};
 	/* Try to join the a LoRa Network...*/
 	//If it fails, retry 3 times.
 	for(uint8_t i=0;i<3;i++){
 		send_command(String("mac join otaa"));
 		get_answer();
 		answer = get_answer(true);
-		if(answer != String("accepted")){
-			success = false;
+		if(answer.charAt(1)==97){
+			success = true;
 		}
 		else{
 			break;
@@ -249,12 +266,15 @@ uint8_t RN2483::hex_string_to_byte(uint8_t* hex_string){
 };
 
 bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
-	String hex_data;
-	uint8_t port_no = port;
+	send_command(String("mac tx uncnf ")+=String(port)+=String(" "), false);
 	for (uint8_t i = 0; i < num_bytes; i++){
-		hex_data.concat(char_to_hex(data[i]));
+		if (i < num_bytes-1){
+			send_command(String(char_to_hex(data[i])), false);
+		}
+		else{
+			send_command(String(char_to_hex(data[i])));
+		}
 	}
-	send_command(String("mac tx uncnf ")+=String(port_no)+=String(" ")+=hex_data);
 	String answer = get_answer();
 	/*Assert if the command was ok. */
 	if (!assert_response(answer)) {
@@ -348,9 +368,23 @@ void RN2483::wake(){
 };
 
 ISR(USART0_RX_vect){
-	sleep_disable();
+	cli();
+	buf[buf_index] = (char)UDR0;
+	if (buf[buf_index] >= LF){
+		if (buf[buf_index]==CR){
+			buf[buf_index+1] = UDR0;
+			buf_rdy = true;
+			buf_index = 0;
+			UCSR0B &= ~(1<<RXCIE);
+		}
+		else{
+			buf_index++;
+		}
+	}	
+	sei();
+	
 	/* Disable USARTO.RXC interrupt */
-	UCSR0B &= ~(1<<RXCIE);
+	
 };
 
 /* Function to transmit string not in use

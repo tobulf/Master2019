@@ -60,7 +60,7 @@ class LoRa_COM{
 	 * 
 	 * @param String command 
 	 */
-	void send_command(String command);
+	void send_command(String command, bool terminated = true);
 	/**
 	 * @brief Flush UART.
 	 * 
