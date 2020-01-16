@@ -47,10 +47,11 @@ bool acc_buf_full = false;
 int16_t acc_data;
 uint8_t acc_sample = 0;
 int16_t acc_data_buf[20];
+uint8_t test_arr[6] = {1,2,3,4,5,6};
 
 adc AnalogIn;
 LED_driver Leds;
-RN2483 radio;
+
 RTC rtc;
 Timer timer;
 EventQueue queue;
@@ -63,15 +64,15 @@ void handle_acc_event(){
 	mpu6050_enable_pin_interrupt();
 	timer.start();
 	while(!acc_buf_full){
-		if (queue.length()>=2){
-				Leds.toogle(RED);
-				radio.set_RX_window_size(0);
-				uint8_t* data = queue.pop_event();
-				queue.pop_event();
-				radio.TX_bytes(data, 88, 1);
-				Leds.toogle(RED);
-				radio.set_RX_window_size(1000);
-		}
+// 		if (queue.length()>=2){
+// 				Leds.toogle(RED);
+// 				radio.set_RX_window_size(0);
+// 				uint8_t* data = queue.pop_event();
+// 				queue.pop_event();
+// 				radio.TX_bytes(data, 88, 1);
+// 				Leds.toogle(RED);
+// 				radio.set_RX_window_size(1000);
+// 		}
 	};
 	
 	acc_buf_full = false;
@@ -99,6 +100,7 @@ int main (void){
 	sei();
 	Leds.toogle(RED);
 	USART_init();
+	RN2483 radio;
 	mpu6050_init();
 	joined = radio.init_OTAA(appEui,appKey);
 	if (!joined){
@@ -106,6 +108,7 @@ int main (void){
 	}
 	radio.set_DR(5);
 	radio.set_duty_cycle(1, 0);
+	radio.TX_bytes(test_arr,6,1);
 	//mpu6050_lowPower_mode();
 	mpu6050_normalPower_mode();
 	mpu6050_set_interrupt_mot_thrshld(25);
