@@ -22,6 +22,8 @@ Please refer to LICENSE file for licensing information.
 #include "i2cmaster.h"
 
 volatile uint8_t buffer[14];
+int MPU6050_AXOFFSET = 675;
+int MPU6050_AYOFFSET = -65;
 int MPU6050_AZOFFSET = 15200;
 int MPU6050_TEMPOFFSET = -9800;
 uint8_t interrupt_byte;
@@ -195,8 +197,7 @@ void mpu6050_init(void) {
 	//disable gyro and acc:
 	mpu6050_tempSensorDisabled();
 	mpu6050_gyroDisabled();
-	mpu6050_accDisabled();
-	mpu6050_accZEnabled();
+	mpu6050_accEnabled();
 	// Initialize external interrupt
 	mpu6050_init_interrupt();
 	//set clock source
@@ -225,10 +226,12 @@ void mpu6050_getRawGyroData(int16_t* gx, int16_t* gy, int16_t* gz) {
 	*gz = (((int16_t)buffer[4]) << 8) | buffer[5];
 }
 
-void mpu6050_getRawAccData(int16_t* az) {
+void mpu6050_getRawAccData(int16_t* ax, int16_t* ay, int16_t* az) {
 	/* Read data*/
-	mpu6050_readBytes(MPU6050_RA_ACCEL_ZOUT_H, 2, (uint8_t *)buffer);
-	*az = (((int16_t)buffer[0]) << 8) | buffer[1];
+	mpu6050_readBytes(MPU6050_RA_ACCEL_XOUT_H, 6, (uint8_t *)buffer);
+	*ax = (((int16_t)buffer[0]) << 8) | buffer[1];
+	*ay = (((int16_t)buffer[2]) << 8) | buffer[3];
+	*az = (((int16_t)buffer[4]) << 8) | buffer[5];
 }
 
 void mpu6050_getRawTempData(int16_t* t) {
@@ -246,11 +249,58 @@ void mpu6050_getConvGyroData(double* axg, double* ayg, double* azg){
 	*azg = (double)(az-MPU6050_GZOFFSET)/MPU6050_GZGAIN;
 }
 
-void mpu6050_getConvAccData(int16_t* gzds){
+void mpu6050_getConvAccData(int16_t* gxds, int16_t* gyds, int16_t* gzds){
+	int16_t gx = 0;
+	int16_t gy = 0;
 	int16_t gz = 0;
-	mpu6050_getRawAccData(&gz);
-    *gzds = (int16_t)(gz-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
+	mpu6050_getRawAccData(&gx, &gy, &gz);
+	*gxds = (int16_t)(gx-MPU6050_AXOFFSET)/MPU6050_AXGAIN;
+	*gyds = (int16_t)(gy-MPU6050_AYOFFSET)/MPU6050_AYGAIN;
+	*gzds = (int16_t)(gz-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
 }
+void mpu6050_FIFO_enable(){
+	mpu6050_writeBit(MPU6050_RA_FIFO_EN, MPU6050_ACCEL_FIFO_EN_BIT, 1);
+	mpu6050_writeBit(MPU6050_RA_USER_CTRL, MPU6050_USERCTRL_FIFO_EN_BIT,1);
+}
+
+void mpu6050_FIFO_stop(){
+	mpu6050_writeBit(MPU6050_RA_FIFO_EN, MPU6050_ACCEL_FIFO_EN_BIT, 0);
+}
+
+void mpu6050_FIFO_disable(){
+	mpu6050_writeBit(MPU6050_RA_FIFO_EN, MPU6050_ACCEL_FIFO_EN_BIT, 0);
+	mpu6050_writeBit(MPU6050_RA_USER_CTRL, MPU6050_USERCTRL_FIFO_EN_BIT,0);
+}
+
+void mpu6050_FIFO_reset(){
+	mpu6050_FIFO_disable();
+	mpu6050_writeBit(MPU6050_RA_USER_CTRL, MPU6050_USERCTRL_FIFO_RESET_BIT,1);
+}
+
+void mpu6050_get_FIFO_length(uint16_t* length){
+	mpu6050_readBytes(MPU6050_RA_FIFO_COUNTH, 2, (uint8_t *)buffer);
+	*length = (((int16_t)buffer[0]) << 8) | buffer[1];
+}
+
+void mpu6050_FIFO_pop(int16_t* gxds, int16_t* gyds, int16_t* gzds){
+	int16_t gtemp = 0;
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = (((int16_t)buffer[0]) << 8);
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = gtemp | buffer[0];
+    *gxds = (int16_t)(gtemp-MPU6050_AXOFFSET)/MPU6050_AXGAIN;
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = (((int16_t)buffer[0]) << 8);
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = gtemp | buffer[0];
+	*gyds = (int16_t)(gtemp-MPU6050_AYOFFSET)/MPU6050_AYGAIN;
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = (((int16_t)buffer[0]) << 8);
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = gtemp | buffer[0];
+	*gzds = (int16_t)(gtemp-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
+}
+
 
 void mpu6050_getConvTempData(int16_t*ta){
 	int16_t  t = 0;
@@ -302,6 +352,12 @@ void mpu6050_enable_data_rdy_interrupt(){
 	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x01);
 	interrupt_byte = 0x01;
 }
+
+void mpu6050_enable_FIFO_OVF_interrupt(){
+	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x10);
+	interrupt_byte = 0x10;
+}
+
 
 uint8_t mpu6050_get_interrupt_status(){
 	uint8_t status = 0;

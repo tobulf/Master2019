@@ -53,13 +53,9 @@ extern "C" {
 
 
 // Set gain for calibration
-#define MPU6050_AXOFFSET 0
-#define MPU6050_AYOFFSET 0
 
-
-
-#define MPU6050_AXGAIN 2.048
-#define MPU6050_AYGAIN 2.048
+#define MPU6050_AXGAIN 16.384
+#define MPU6050_AYGAIN 16.384
 #define MPU6050_AZGAIN 16.384
 #define MPU6050_GXOFFSET 0
 #define MPU6050_GYOFFSET 0
@@ -76,10 +72,16 @@ extern uint8_t mpu6050_testConnection(void);
 
 
 void mpu6050_getRawGyroData(int16_t* gx, int16_t* gy, int16_t* gz);
-void mpu6050_getRawAccData(int16_t* az);
+void mpu6050_getRawAccData(int16_t* ax, int16_t* ay, int16_t* az);
 void mpu6050_getRawTempData(int16_t* t);
 void mpu6050_getConvGyroData(double* axg, double* ayg, double* azg);
-void mpu6050_getConvAccData(int* gzds);
+void mpu6050_getConvAccData(int16_t* gxds, int16_t* gyds, int16_t* gzds);
+void mpu6050_FIFO_enable(void);
+void mpu6050_FIFO_disable(void);
+void mpu6050_FIFO_stop();
+void mpu6050_FIFO_reset(void);
+void mpu6050_get_FIFO_length(uint16_t* length);
+void mpu6050_FIFO_pop(int16_t* gxds, int16_t* gyds, int16_t* gzds);
 void mpu6050_getConvTempData(int*ta);
 
 extern void mpu6050_setSleepDisabled(void);
@@ -100,6 +102,7 @@ void mpu6050_init_interrupt(void);
 void mpu6050_set_interrupt_mot_thrshld(uint8_t threshold);
 void mpu6050_set_interrupt_mot_dur(uint8_t duration);
 void mpu6050_enable_motion_interrupt(void);
+void mpu6050_enable_FIFO_OVF_interrupt(void);
 void mpu6050_enable_data_rdy_interrupt(void);
 uint8_t mpu6050_get_interrupt_status(void);
 void mpu6050_disable_interrupt(void);

@@ -199,9 +199,19 @@ bool RN2483::set_DR(uint8_t DR){
 	return assert_response(get_answer());
 };
 
-bool RN2483::set_duty_cycle(uint8_t channel, uint16_t dcycle){
+bool RN2483::set_ch_duty_cycle(uint8_t channel, uint16_t dcycle){
 	send_command(String("mac set ch dcycle ")+=String(channel)+=String(" ")+=String(dcycle));
 	bool response = assert_response(get_answer()); 
+	send_command("mac save");
+	return response && assert_response(get_answer());
+};
+
+bool RN2483::set_duty_cycle(uint16_t dcycle){
+	bool response = false;
+	for(uint8_t i = 2; i<=15;i++){
+		send_command(String("mac set ch dcycle ")+=String(i)+=String(" ")+=String(dcycle));
+		response = assert_response(get_answer());
+	}
 	send_command("mac save");
 	return response && assert_response(get_answer());
 };
@@ -263,7 +273,7 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	String answer = get_answer();
 	/*Assert if the command was ok. */
 	if (!assert_response(answer)) {
-		//printf("error \r\n");
+		return false;
 	}
 	/*Assert answer: */
 	answer = get_answer(true);
