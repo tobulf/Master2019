@@ -150,7 +150,7 @@ bool RN2483::assert_response(String response){
 
 
 bool RN2483::init_OTAA(String app_EUI, String app_key){
-	bool success = true;
+	bool success = false;
 	String answer;
 	/*Reset chip and set to 868.*/
 	send_command("mac reset 868");
@@ -182,15 +182,21 @@ bool RN2483::init_OTAA(String app_EUI, String app_key){
 		send_command(String("mac join otaa"));
 		get_answer();
 		answer = get_answer(true);
-		if(answer != String("accepted")){
-			success = false;
+		if(answer.startsWith("acc")){
+			success = true;
+			break;
 		}
 		else{
-			break;
+			success=false;
 		}
 	}
 	return success;
 } 
+void RN2483::print_dev_eui(){
+	send_command("sys get hweui");
+	String answer = get_answer();
+	printf("Dev eui: %s \n", answer.c_str());
+}
 
 bool RN2483::set_DR(uint8_t DR){
 	send_command(String("mac set dr ")+=String(DR));
@@ -254,7 +260,7 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	for (uint8_t i = 0; i < num_bytes; i++){
 		hex_data.concat(char_to_hex(data[i]));
 	}
-	send_command(String("mac tx uncnf ")+=String(port_no)+=String(" ")+=hex_data);
+	send_command(String("mac tx cnf ")+=String(port_no)+=String(" ")+=hex_data);
 	String answer = get_answer();
 	/*Assert if the command was ok. */
 	if (!assert_response(answer)) {

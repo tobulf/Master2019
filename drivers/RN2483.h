@@ -175,6 +175,7 @@ class RN2483: public LoRa_COM {
 	 */
 	void wake();
 	
+	void print_dev_eui();
 	private:
 	/**
 	 * @brief Support function, turns a char into a hex representation of the byte, in String format(ex: "A" = "41").

@@ -43,7 +43,7 @@ public:
 	 * 
 	 * @return uint16_t 
 	 */
-	uint16_t get_battery_lvl(void);
+	uint8_t get_battery_lvl(void);
 	/**
 	 * @brief Get the light lvl in percent.
 	 * 

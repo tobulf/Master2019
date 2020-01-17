@@ -33,7 +33,7 @@ void adc::start_convertion(uint8_t ch){
 	ADCSRA |= (1<<ADSC);
 }
 
-uint16_t adc::get_battery_lvl(void){
+uint8_t adc::get_battery_lvl(void){
 	enable();
 	start_convertion(1);
 	while(!read());
@@ -42,8 +42,11 @@ uint16_t adc::get_battery_lvl(void){
 	if (level > 100){
 		return 100;
 	}
+	else if (level < 0){
+		return 0;
+	}
 	else{
-		return level;
+		return (uint8_t) level;
 	}
 }
 
