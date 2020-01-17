@@ -9,45 +9,36 @@
 #define LF (uint8_t)10
 #define CR (uint8_t)13
 
-uint8_t buf_index = 0;
-char buf[50];
-bool buf_rdy = false;
-
 unsigned char LoRa_COM::receive(void){
 	/* Wait for data to be received:*/
 	while ( !(UCSR0A & (1<<RXC)) );
 	/*Return data from buffer:*/
 	return UDR0;
-}
-
+};
 
 String LoRa_COM::get_answer(bool sleep){
-	enable_RX_int();
 	String received;
+	unsigned char byte;
 	if(sleep){
-	///* enable Uart interrupt and Idle sleep mode */
-	//enable_RX_int();
+		/* enable Uart interrupt and Idle sleep mode */
+		enable_RX_int();
 		enable_idle();
 		sleep_enable();
 		sleep_mode();
 	};
 	/*receive bytes and put them in a string: */
-	while(!buf_rdy){
-		 _delay_us(1);
-	};
-	buf_rdy=false;
-	for (uint8_t i = 0;;i++){
-		if (buf[i]!=CR){
-			received.concat(buf[i]);
-		}
-		else{
+	while( (byte = receive()) >= LF){
+		/*CR+LF termination: */
+		if(byte == CR){
+			/*Empty the buffer before breaking.*/
+			byte = receive();
 			break;
 		}
-	}
-	//printf("%s", received.c_str());
+		/* Merge the bytes together to a string: */
+		received.concat((char)byte);
+	};
 	return received;
- };
-	
+};
 	
 void LoRa_COM::send_command(String command, bool terminated){
 	for(uint16_t i = 0; i < command.length();i++){
@@ -59,7 +50,6 @@ void LoRa_COM::send_command(String command, bool terminated){
 		transmit(LF);
 	}	
 };
-
 
 
 void LoRa_COM::transmit(uint8_t data){
@@ -105,7 +95,6 @@ void LoRa_COM::send_break(void){
 };
 
 LoRa_COM::LoRa_COM(){
-	sei();
 	UCSR0B = 0x00;
 	UCSR0C = 0x06;
 	/*Delay in case of force Reset */
@@ -124,7 +113,7 @@ LoRa_COM::LoRa_COM(){
 	UBRR0H = (unsigned char)(ubrr>>8);
 	UBRR0L = (unsigned char)ubrr;
 	/* Enable receiver and transmitter */
-	UCSR0B = (1<<RXEN)|(1<<TXEN) | (1<<RXCIE);
+	UCSR0B = (1<<RXEN)|(1<<TXEN);
 	/* Set frame format:  2stop bit, 8data*/
 	UCSR0C = (1<<USBS)|(3<<UCSZ0);
 	transmit(85);
@@ -138,88 +127,77 @@ RN2483::RN2483(){
 	/*Empty the buffer.*/
 	get_answer();
 	_delay_ms(500);
-}
+};
+
 
 
 String RN2483::get_version(){
 	send_command("sys get ver");
 	return get_answer();
-}
-
+};
 
 bool RN2483::assert_response(String response){
-	if(response.charAt(1) == 111){
-		return true;
-	}
-	else{
+	if(response != String("ok")){
 		return false;
 	}
-}
-
+	return true;
+};
 
 bool RN2483::init_OTAA(String app_EUI, String app_key){
 	bool success = false;
 	String answer;
 	/*Reset chip and set to 868.*/
-	_delay_ms(100);
 	send_command("mac reset 868");
-	answer = get_answer();
-	if (!assert_response(answer)){return false;};
+	if (!assert_response(get_answer())){return false;};
 	/*Get device EUI*/
 	send_command("sys get hweui");
 	answer = get_answer();
-	answer.trim();
 	/*Set the device EUI*/
 	send_command(String("mac set deveui ")+=answer);
-	answer = get_answer();
-	if (!assert_response(answer)){return false;};
+	if (!assert_response(get_answer())){return false;};
 	/* Set the application EUI*/
 	send_command(String("mac set appeui ")+=app_EUI);
-	answer = get_answer();
-	if (!assert_response(answer)){return false;};
+	if (!assert_response(get_answer())){return false;};
 	/* Set Appkey.*/
 	send_command(String("mac set appkey ")+=app_key);
-	answer = get_answer();
-	if (!assert_response(answer)){return false;};
+	if (!assert_response(get_answer())){return false;};
 	/*Set powerindex to 1, for 863 MHz(0 for 433 MHz.)*/
 	send_command(String("mac set pwridx 1"));
-	answer = get_answer();
-	if (!assert_response(answer)){return false;};
+	if (!assert_response(get_answer())){return false;};
 	/* TTN does not support adaptive data-rate, thus it is turned off.*/
 	send_command(String("mac set adr off"));
-	answer = get_answer();
-	if (!assert_response(answer)){return false;};
+	if (!assert_response(get_answer())){return false;};
 	/*Save current settings on the RN2483.*/
 	send_command(String("mac save"));
-	answer = get_answer();
-	if (!assert_response(answer)){return false;};
+	if (!assert_response(get_answer())){return false;};
 	/* Try to join the a LoRa Network...*/
 	//If it fails, retry 3 times.
 	for(uint8_t i=0;i<3;i++){
 		send_command(String("mac join otaa"));
 		get_answer();
 		answer = get_answer(true);
-		if(answer.charAt(1)==97){
+		if(answer.startsWith("acc")){
 			success = true;
+			break;
 		}
 		else{
-			break;
+			success=false;
 		}
 	}
 	return success;
-} 
+}
 
 void RN2483::print_dev_eui(){
 	send_command("sys get hweui");
 	String answer = get_answer();
 	printf("Dev eui: %s \n", answer.c_str());
-}
+};
 
 
 bool RN2483::set_DR(uint8_t DR){
 	send_command(String("mac set dr ")+=String(DR));
 	return assert_response(get_answer());
-}
+};
 
 bool RN2483::set_duty_cycle(uint8_t channel, uint16_t dcycle){
 	send_command(String("mac set ch dcycle ")+=String(channel)+=String(" ")+=String(dcycle));
@@ -231,7 +209,7 @@ bool RN2483::set_duty_cycle(uint8_t channel, uint16_t dcycle){
 bool RN2483::set_RX_window_size(uint16_t milliseconds){
 	send_command(String("mac set rxdelay1 ")+=String(milliseconds));
 	return assert_response(get_answer());
-}
+};
 
 String RN2483::char_to_hex(uint8_t character){
 	String hex_string;
@@ -273,7 +251,7 @@ uint8_t RN2483::hex_string_to_byte(uint8_t* hex_string){
 };
 
 bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
-	send_command(String("mac tx uncnf ")+=String(port)+=String(" "), false);
+	send_command(String("mac tx cnf ")+=String(port)+=String(" "), false);
 	for (uint8_t i = 0; i < num_bytes; i++){
 		if (i < num_bytes-1){
 			send_command(String(char_to_hex(data[i])), false);
@@ -349,7 +327,7 @@ bool RN2483::unread_downlink(){
 	else{
 		return false;
 	}
-	};
+};
 
 uint8_t* RN2483::read_downlink_buf(){
 	if (new_msg){
@@ -357,7 +335,7 @@ uint8_t* RN2483::read_downlink_buf(){
 		return buf;
 	}
 	return false;
-}
+};
 
 
 void RN2483::sleep(uint16_t length){
@@ -375,23 +353,9 @@ void RN2483::wake(){
 };
 
 ISR(USART0_RX_vect){
-	cli();
-	buf[buf_index] = (char)UDR0;
-	if (buf[buf_index] >= LF){
-		if (buf[buf_index]==CR){
-			buf[buf_index+1] = UDR0;
-			buf_rdy = true;
-			buf_index = 0;
-			UCSR0B &= ~(1<<RXCIE);
-		}
-		else{
-			buf_index++;
-		}
-	}	
-	sei();
-	
+	sleep_disable();
 	/* Disable USARTO.RXC interrupt */
-	
+	UCSR0B &= ~(1<<RXCIE);
 };
 
 /* Function to transmit string not in use
