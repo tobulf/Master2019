@@ -174,6 +174,7 @@ class RN2483: public LoRa_COM {
 	 * 
 	 */
 	void wake();
+	void print_dev_eui(void);
 	
 	private:
 	/**

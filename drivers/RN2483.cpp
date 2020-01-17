@@ -209,6 +209,13 @@ bool RN2483::init_OTAA(String app_EUI, String app_key){
 	return success;
 } 
 
+void RN2483::print_dev_eui(){
+	send_command("sys get hweui");
+	String answer = get_answer();
+	printf("Dev eui: %s \n", answer.c_str());
+}
+
+
 bool RN2483::set_DR(uint8_t DR){
 	send_command(String("mac set dr ")+=String(DR));
 	return assert_response(get_answer());
