@@ -37,13 +37,13 @@
 extern "C" {
 	#include "drivers/Debug.h"
 };
-
+enum MESSAGE_HEADERS {SYNC = 1, EVENT = 2, APPEND_DATA=4, DUMMY_MSG=8};
 enum STATE {ACTIVE=1, SLEEP, DMY_EVENT, ACC_EVENT};
 STATE cur_state;
 STATE prev_state;
 
 bool joined = false;
-uint8_t radio_buf[200];
+uint8_t radio_buf[70];
 
 adc AnalogIn;
 LED_driver Leds;
@@ -63,8 +63,10 @@ int main (void){
 	}
 	radio.set_DR(5);
 	radio.set_duty_cycle(0);
+	radio.sleep();
 	mpu6050_normalPower_mode();
-	mpu6050_set_interrupt_mot_thrshld(25);
+	mpu6050_set_interrupt_mot_thrshld(15);
+	mpu6050_set_interrupt_mot_dur(1);
 	mpu6050_enable_motion_interrupt();
 	mpu6050_enable_pin_interrupt();
 	cur_state = ACTIVE;
@@ -80,12 +82,27 @@ int main (void){
 				if (prev_state!=ACTIVE){
 					//Send the data:
 					Leds.turn_on(YELLOW);
+					radio.wake();
 					uint16_t size;
-					uint8_t times = 0;
 					mpu6050_get_FIFO_length(&size);
-					//Read and send 960 bytes of data: 8s recording.
+					//Read and send max 960 bytes of data: 8s recording.
+					bool sent = false;
+					for (uint8_t i = 3; i<=50;i = i + 6){
+						mpu6050_FIFO_pop(&x, &y, &z);
+						radio_buf[i]=(uint8_t)((x>>8) & 0xFF);
+						radio_buf[i+1]=(uint8_t)(x & 0xFF);
+						radio_buf[i+2]=(uint8_t)((y>>8) & 0xFF);
+						radio_buf[i+3]=(uint8_t)(y & 0xFF);
+						radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
+						radio_buf[i+5]=(uint8_t)(z & 0xFF);
+					}
+					while (!sent){
+						sent = radio.TX_bytes(radio_buf, 51 ,1);
+					}
+					mpu6050_get_FIFO_length(&size);
+					radio_buf[0] = APPEND_DATA;
 					while(size>64){
-						times++;
+						sent = false;
 						for (uint8_t i = 1; i<=48;i = i + 6){
 							mpu6050_FIFO_pop(&x, &y, &z);
 							radio_buf[i]=(uint8_t)((x>>8) & 0xFF);
@@ -95,26 +112,29 @@ int main (void){
 							radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
 							radio_buf[i+5]=(uint8_t)(z & 0xFF);
 						}
-						printf("Size: %i \n", size);
-						bool sent = false;
 						while (!sent){
-							radio.set_DR(5);
 							sent = radio.TX_bytes(radio_buf, 49 ,1);
 						}
-						printf("here now %d\n", times);
 						mpu6050_get_FIFO_length(&size);
 						
 					}
+					radio.sleep();
+					prev_state = ACTIVE;
+					Leds.reset();
+					Leds.turn_on(GREEN);
 					mpu6050_FIFO_reset();
 					mpu6050_enable_motion_interrupt();
 					mpu6050_enable_pin_interrupt();
-					prev_state = ACTIVE;
 					break;
 				}
 				else{
-					mpu6050_getConvAccData(&x, &y, &z);
-					printf("X: %i Y: %i Z: %i\n", x, y, z);
-					_delay_ms(10000);
+					cur_state = SLEEP;
+					prev_state = ACTIVE;
+					mpu6050_lowPower_mode();
+					Leds.reset();
+					enable_power_save();
+					sleep_enable();
+					sleep_mode();
 				}
 				break;
 			case SLEEP:
@@ -129,7 +149,17 @@ int main (void){
 				}	
 				break;
 			case ACC_EVENT:
+				AnalogIn.enable();
 				_delay_ms(1);
+				radio_buf[0] = EVENT;
+				radio_buf[1] = AnalogIn.get_battery_lvl();
+				radio_buf[2] = 1;
+				AnalogIn.disable();
+				enable_power_save();
+				sleep_enable();
+				sleep_mode();
+				prev_state = ACC_EVENT;
+				cur_state = ACTIVE;
  				break;
 			case DMY_EVENT:
 				break;
@@ -144,13 +174,14 @@ ISR(INT0_vect){
 	cli();
 	mpu6050_disable_pin_interrupt();
 	sei();
+	sleep_disable();
 	mpu6050_disable_interrupt();
 	Leds.turn_on(YELLOW);
 	uint8_t interrupt = mpu6050_get_interrupt_status();
 	if ((interrupt & (1 << 6)) && cur_state!=ACC_EVENT){
 		prev_state = cur_state;
 		cur_state = ACC_EVENT;
-		printf("motion interrupt \n");
+		mpu6050_normalPower_mode();
 		mpu6050_FIFO_reset();
 		mpu6050_FIFO_enable();
 		mpu6050_enable_FIFO_OVF_interrupt();
@@ -158,8 +189,6 @@ ISR(INT0_vect){
 	}
 	else {
 		mpu6050_FIFO_stop();
-		prev_state = ACC_EVENT;
-		cur_state = ACTIVE;
 	}
 
 };
@@ -167,6 +196,7 @@ ISR(INT0_vect){
 ISR(INT1_vect){
 	printf("Dummy interrupt \n");
 };
+
 ISR(WDT_vect){
 	wdt_disable();
 	sleep_disable();

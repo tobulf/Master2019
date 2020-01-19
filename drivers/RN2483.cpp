@@ -360,6 +360,8 @@ void RN2483::sleep(uint16_t length){
 
 void RN2483::wake(){
 	send_break();
+	send_command(String("sys get vdd"));
+	get_answer();
 };
 
 ISR(USART0_RX_vect){

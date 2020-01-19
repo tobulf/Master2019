@@ -371,8 +371,8 @@ void mpu6050_set_interrupt_mot_thrshld(uint8_t threshold) {
 }
 
 void mpu6050_set_interrupt_mot_dur(uint8_t duration) {
-	/*LSB = 4mg, range: 0 - 255ms*/
-	mpu6050_writeByte(MPU6050_RA_MOT_DUR,duration);
+	/*LSB = 1ms, range: 0 - 255ms*/
+	mpu6050_writeByte(MPU6050_RA_MOT_DUR, duration);
 }
 
 
@@ -403,7 +403,7 @@ void mpu6050_accZDisabled(){
 void mpu6050_lowPower_mode(){
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 1);
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_SLEEP_BIT, 0);
-	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2,MPU6050_PWR2_LP_WAKE_CTRL_BIT,MPU6050_PWR2_LP_WAKE_CTRL_LENGTH, 0b10);
+	mpu6050_writeBits(MPU6050_RA_PWR_MGMT_2,MPU6050_PWR2_LP_WAKE_CTRL_BIT,MPU6050_PWR2_LP_WAKE_CTRL_LENGTH, 0b11);
 }
 
 void mpu6050_normalPower_mode(){
