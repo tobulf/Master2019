@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <avr/wdt.h>
 #include "power_management.h"
 #include "WString.h"
 

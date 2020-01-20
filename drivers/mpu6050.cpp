@@ -344,7 +344,7 @@ void mpu6050_enable_pin_interrupt(){
 }
 
 void mpu6050_enable_motion_interrupt(){
-	mpu6050_writeByte(MPU6050_RA_INT_ENABLE,0x40);
+	mpu6050_writeByte(MPU6050_RA_INT_ENABLE, 0x40);
 	interrupt_byte = 0x40;
 }
 
@@ -408,5 +408,6 @@ void mpu6050_lowPower_mode(){
 
 void mpu6050_normalPower_mode(){
 	mpu6050_writeBit(MPU6050_RA_PWR_MGMT_1, MPU6050_PWR1_CYCLE_BIT, 0);
+	mpu6050_writeByte(MPU6050_RA_SMPLRT_DIV, 49); //1khz / (1 + 49) = 20Hz
 	mpu6050_tempSensorEnabled();
 }

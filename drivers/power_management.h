@@ -32,13 +32,6 @@ void enable_standby();
  * 
  */
 void enable_idle();
-/**
- * @brief Enable ADC noise reduction mode.
- * 
- */
-void enable_adc_NR();
-
-
 
 
 #endif /* POWER_MANAGEMENT_H_ */

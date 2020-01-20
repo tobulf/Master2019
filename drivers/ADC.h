@@ -14,6 +14,7 @@
 #include <avr/sleep.h>
 #include <util/delay.h>
 #include <stdbool.h>
+#include "WDT.h"
 #include "power_management.h"
 
 /**
@@ -22,7 +23,7 @@
  */
 #define BATTERY_GAIN 3.75
 #define BATTERY_OFFSET 610
-#define LIGHTSENSOR_GAIN 1
+#define LIGHTSENSOR_GAIN 9.8
 #define LIGHTSENSOR_OFFSET 0
 
 
@@ -43,13 +44,13 @@ public:
 	 * 
 	 * @return uint16_t 
 	 */
-	uint16_t get_battery_lvl(void);
+	uint8_t get_battery_lvl(void);
 	/**
 	 * @brief Get the light lvl in percent.
 	 * 
 	 * @return uint16_t 
 	 */
-	uint16_t get_light_lvl(void);
+	uint8_t get_light_lvl(void);
 	/**
 	 * @brief Disable ADC.
 	 * 

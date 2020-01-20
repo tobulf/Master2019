@@ -12,11 +12,15 @@
 #include <avr/interrupt.h> 
 #include "Debug.h"
 #include <avr/wdt.h>
+#include <avr/io.h>
 
-void wdt_off();
+void WDT_off();
 void wdt_INT_enable();
 void wdt_INT_RST_enable();
 void wdt_RST_enable();
+void wdt_set_to_8s();
+void wdt_set_to_4s();
+void wdt_set_to_2s();
 
 
 #endif /* WDT_H_ */

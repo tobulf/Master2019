@@ -12,6 +12,7 @@
 unsigned char LoRa_COM::receive(void){
 	/* Wait for data to be received:*/
 	while ( !(UCSR0A & (1<<RXC)) );
+	wdt_reset();
 	/*Return data from buffer:*/
 	return UDR0;
 };
@@ -173,6 +174,7 @@ bool RN2483::init_OTAA(String app_EUI, String app_key){
 	/* Try to join the a LoRa Network...*/
 	//If it fails, retry 3 times.
 	for(uint8_t i=0;i<3;i++){
+		wdt_reset();
 		send_command(String("mac join otaa"));
 		get_answer();
 		answer = get_answer(true);
@@ -365,9 +367,11 @@ void RN2483::wake(){
 };
 
 ISR(USART0_RX_vect){
+	cli();
 	sleep_disable();
 	/* Disable USARTO.RXC interrupt */
 	UCSR0B &= ~(1<<RXCIE);
+	sei();
 };
 
 /* Function to transmit string not in use

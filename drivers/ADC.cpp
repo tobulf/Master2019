@@ -5,12 +5,12 @@
  *  Author: Tobias
  */ 
 #include "ADC.h"
-#include "debug.h"
 
 uint16_t val = 0;
 bool rdy = false;
 
 adc::adc(){
+	WDT_off();
 	value = &val;
 	ADMUX = (1<<REFS0);
 	ADCSRA = (1<<ADPS2)|(0<<ADPS1)|(0<<ADPS0) | (1<<ADIE);
@@ -33,35 +33,35 @@ void adc::start_convertion(uint8_t ch){
 	ADCSRA |= (1<<ADSC);
 }
 
-uint16_t adc::get_battery_lvl(void){
+uint8_t adc::get_battery_lvl(void){
 	enable();
 	start_convertion(1);
 	while(!read());
 	disable();
-	int level = (int)((val-BATTERY_OFFSET)/BATTERY_GAIN);
+	int16_t level = (int16_t)((val+1-BATTERY_OFFSET)/BATTERY_GAIN);
 	if (level > 100){
 		return 100;
 	}
 	else{
-		return level;
+		return (uint8_t)level;
 	}
 }
 
 
-uint16_t adc::get_light_lvl(void){
+uint8_t adc::get_light_lvl(void){
 	enable();
 	start_convertion(0);
 	while(!read());
 	disable();
-	int level = (int)((val-LIGHTSENSOR_OFFSET)/LIGHTSENSOR_GAIN);
+	int16_t level = (int16_t)((val-LIGHTSENSOR_OFFSET)/LIGHTSENSOR_GAIN);
 	if (level > 100){
 		return level;
 	}
 	else if (level < 0){
-		return level;
+		return 0;
 	}
 	else{
-		return level;
+		return (uint8_t)level;
 	}
 }
 
@@ -77,6 +77,8 @@ bool adc::read(void){
 }
 
 ISR(ADC_vect){
+	cli();
 	val = ADC;
+	sei();
 	rdy = true;
 }

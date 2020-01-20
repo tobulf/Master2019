@@ -7,7 +7,7 @@
 
 #include "WDT.h"
 
-void wdt_off(void){
+void WDT_off(void){
 	cli();
 	wdt_reset();
 	/* Clear WDRF in MCUSR */
@@ -33,4 +33,19 @@ void wdt_INT_RST_enable(){
 void wdt_RST_enable(){
 	WDTCSR  |= (1<<WDE);
 	WDTCSR &= ~(1<<WDIE);
+};
+
+void wdt_set_to_2s(){
+	WDTCSR |= (1<<WDP2) | (1<<WDP1) | (1<<WDP0);
+	WDTCSR &= ~((1<<WDP3));
+};
+
+void wdt_set_to_4s(){
+	WDTCSR |= (1<<WDP3);
+	WDTCSR &= ~((1<<WDP2) | (1<<WDP1) | (1<<WDP0));
+};
+
+void wdt_set_to_8s(){
+	WDTCSR |= (1<<WDP3) | (1<<WDP0);
+	WDTCSR &= ~((1<<WDP2) | (1<<WDP1));
 };
