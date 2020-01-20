@@ -136,7 +136,7 @@ class RN2483: public LoRa_COM {
 	 * @return true
 	 * @return false
 	 */
-	bool set_duty_cycle(uint8_t channel, uint16_t dcycle);
+	bool set_duty_cycle(uint16_t dcycle);
 	/**
 	 * @brief Set the size of receive window 1.
 	 * 

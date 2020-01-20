@@ -56,7 +56,8 @@ int main (void){
 		Leds.toogle(RED);	
 	};
 	radio.set_DR(5);
-	radio.set_duty_cycle(1, 0);
+	radio.set_duty_cycle(0);
+	radio.set_RX_window_size(1000);
 	buf[0] = AnalogIn.get_battery_lvl();
 	printf("Bat: %d \n",buf[0]);
 	Leds.toogle(GREEN);
