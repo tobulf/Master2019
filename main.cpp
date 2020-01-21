@@ -10,6 +10,7 @@
 #include <avr/io.h>
 #include <util/delay_basic.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <avr/sleep.h>
 #include <avr/wdt.h>
 #include "drivers/power_management.h"
@@ -51,37 +52,10 @@ uint8_t radio_buf[70];
 int16_t x;
 int16_t y;
 int16_t z;
+int16_t threshold=0;
 int16_t temperature;
 uint32_t timestamp;
 uint32_t alive_timestamp;
-
-// int main (void){
-// 	sei();
-// 	wdt_reset();
-// 	LED_driver temp;
-// 	temp.toogle(RED);
-// 	wdt_reset();
-// 	wdt_enable(WDTO_8S);
-// 	wdt_set_to_8s();
-// 	wdt_RST_enable();
-// 	USART_init();
-// 	wdt_reset();
-//  	while(true){
-// 		wdt_reset();
-// 		printf("yea boi \n");
-// 		_delay_ms(5000);
-// 		temp.toogle(YELLOW);
-// 		wdt_reset();
-// 		_delay_ms(5000);
-// 		printf("WORKS! \n");
-// 		wdt_reset();
-// 		WDT_off();
-// 		_delay_ms(10000);
-// 		printf("now to...");
-// 		
-// 	}
-// 	WDT_off();
-// };
 
 adc AnalogIn;
 LED_driver Leds;
@@ -95,20 +69,48 @@ int main (void){
 	wdt_set_to_8s();
 	wdt_RST_enable();
 	wdt_reset();
-	Leds.toogle(RED);
+	Leds.toogle(GREEN);
 	USART_init();
 	wdt_reset();
 	while (!joined){
 		joined = radio.init_OTAA(appEui,appKey);
 		wdt_reset();
 	}
+	Leds.toogle(GREEN);
+	Leds.toogle(RED);
 	radio.set_duty_cycle(0);
 	radio.set_RX_window_size(1000);
 	radio.sleep();
 	wdt_reset();
 	mpu6050_init();
 	mpu6050_normalPower_mode();
-	mpu6050_set_interrupt_mot_thrshld(10);
+	bool threshold_found = false;
+	timer.reset();
+	timer.start();
+	while(!threshold_found){
+		wdt_reset();
+		mpu6050_getConvAccData(&x, &y, &x);
+		if (abs(x) > threshold){
+			threshold = x;
+		}
+		if (abs(y) > threshold){
+			threshold = y;
+		}
+		if (abs(z) > threshold){
+			threshold = z;
+		}
+		if (timer.read_ms()>10000){
+			threshold_found = true;
+			timer.stop();
+			timer.reset();
+			threshold = (threshold/65);
+			if (threshold>9){
+				threshold = 9;
+			}
+		}
+	}
+	wdt_reset();
+	mpu6050_set_interrupt_mot_thrshld(threshold);
 	mpu6050_get_interrupt_status();
 	mpu6050_enable_motion_interrupt();
 	mpu6050_enable_pin_interrupt();
@@ -162,7 +164,7 @@ int main (void){
 					wdt_reset();
 				}
 				mpu6050_get_FIFO_length(&size);
-				while(size>64){
+				while(size>60){
 					sent = false;
 					for (uint8_t i = 0; i<=47;i = i + 6){
 						mpu6050_FIFO_pop(&x, &y, &z);
