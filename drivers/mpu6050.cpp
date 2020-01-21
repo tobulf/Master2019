@@ -25,7 +25,7 @@ volatile uint8_t buffer[14];
 int MPU6050_AXOFFSET = 675;
 int MPU6050_AYOFFSET = -65;
 int MPU6050_AZOFFSET = 15200;
-int MPU6050_TEMPOFFSET = 0;
+int MPU6050_TEMPOFFSET = -9800;
 uint8_t interrupt_byte;
 /*
  * read bytes from chip register
@@ -216,6 +216,13 @@ void mpu6050_init(void) {
 	mpu6050_writeBits(MPU6050_RA_I2C_MST_CTRL, MPU6050_MULT_MST_EN_BIT, 1, 0);
 	//disable DMP
 	mpu6050_writeBit(MPU6050_RA_USER_CTRL, MPU6050_USERCTRL_DMP_EN_BIT,0);
+	uint8_t calibrated = EEPROM_read(MPU6050_CALIBRATED);
+	if (calibrated==1){
+		MPU6050_AXOFFSET = (int16_t)EEPROM_read_int16(MPU6050_CALIBRATED_AXOFFSET);
+		MPU6050_AYOFFSET = (int16_t)EEPROM_read_int16(MPU6050_CALIBRATED_AYOFFSET);
+		MPU6050_AZOFFSET = (int16_t)EEPROM_read_int16(MPU6050_CALIBRATED_AZOFFSET);
+		MPU6050_TEMPOFFSET = (int16_t)EEPROM_read_int16(MPU6050_CALIBRATED_TEMPOFFSET);
+	}
 }
 
 void mpu6050_getRawGyroData(int16_t* gx, int16_t* gy, int16_t* gz) {

@@ -19,6 +19,8 @@ References:
 
 #include <avr/io.h>
 #include "mpu6050registers.h"
+#include "EEPROM.h"
+#include "MemoryAdresses.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,9 +56,9 @@ extern "C" {
 
 // Set gain for calibration
 
-#define MPU6050_AXGAIN 16.384
-#define MPU6050_AYGAIN 16.384
-#define MPU6050_AZGAIN 16.384
+#define MPU6050_AXGAIN 1//16.384
+#define MPU6050_AYGAIN 1//16.384
+#define MPU6050_AZGAIN 1//16.384
 #define MPU6050_GXOFFSET 0
 #define MPU6050_GYOFFSET 0
 #define MPU6050_GZOFFSET 0
