@@ -19,6 +19,8 @@ References:
 
 #include <avr/io.h>
 #include "mpu6050registers.h"
+#include "EEPROM.h"
+#include "MemoryAdresses.h"
 
 #ifdef __cplusplus
 extern "C" {
