@@ -51,6 +51,7 @@ uint8_t radio_buf[70];
 int16_t x;
 int16_t y;
 int16_t z;
+int16_t temperature;
 uint32_t timestamp;
 uint32_t alive_timestamp;
 
@@ -130,6 +131,9 @@ int main (void){
 				Leds.turn_on(YELLOW);
 				AnalogIn.enable();
 				radio.wake();
+				mpu6050_tempSensorEnabled();
+				mpu6050_getConvTempData(&temperature);
+				mpu6050_tempSensorDisabled();
 				uint16_t size;
 				mpu6050_get_FIFO_length(&size);
 				//Read and send max 960 bytes of data: 8s recording.
@@ -139,10 +143,11 @@ int main (void){
 				radio_buf[3]=(uint8_t)(timestamp & 0xFF);
 				radio_buf[4] = AnalogIn.get_battery_lvl();
 				radio_buf[5] = AnalogIn.get_light_lvl();
+				radio_buf[6] = (uint8_t)temperature;
 				AnalogIn.disable();
 				sent = false;
 				wdt_reset();
-				for (uint8_t i = 6; i<=53;i = i + 6){
+				for (uint8_t i = 7; i<=54;i = i + 6){
 					mpu6050_FIFO_pop(&x, &y, &z);
 					radio_buf[i]=(uint8_t)((x>>8) & 0xFF);
 					radio_buf[i+1]=(uint8_t)(x & 0xFF);
@@ -194,6 +199,9 @@ int main (void){
 				wdt_reset();
 				radio.wake();
 				mpu6050_normalPower_mode();
+				mpu6050_tempSensorEnabled();
+				mpu6050_getConvTempData(&temperature);
+				mpu6050_tempSensorDisabled();
 				mpu6050_getRawAccData(&x,&y,&z);
 				wdt_reset();
 				alive_timestamp = rtc.get_epoch();
@@ -203,12 +211,13 @@ int main (void){
 				radio_buf[3]=(uint8_t)(alive_timestamp & 0xFF);
 				radio_buf[4] = AnalogIn.get_battery_lvl();
 				radio_buf[5] = AnalogIn.get_light_lvl();
-				radio_buf[6]=(uint8_t)((x>>8) & 0xFF);
-				radio_buf[7]=(uint8_t)(x & 0xFF);
-				radio_buf[8]=(uint8_t)((y>>8) & 0xFF);
-				radio_buf[9]=(uint8_t)(y & 0xFF);
-				radio_buf[10]=(uint8_t)((z>>8) & 0xFF);
-				radio_buf[11]=(uint8_t)(z & 0xFF);
+				radio_buf[6] = (uint8_t)temperature;
+				radio_buf[7]=(uint8_t)((x>>8) & 0xFF);
+				radio_buf[8]=(uint8_t)(x & 0xFF);
+				radio_buf[9]=(uint8_t)((y>>8) & 0xFF);
+				radio_buf[10]=(uint8_t)(y & 0xFF);
+				radio_buf[11]=(uint8_t)((z>>8) & 0xFF);
+				radio_buf[12]=(uint8_t)(z & 0xFF);
 				AnalogIn.disable();
 				wdt_reset();
 				sent = false;

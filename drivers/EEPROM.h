@@ -30,6 +30,8 @@ void EEPROM_reset();
  * @param ucData 
  */
 void EEPROM_write(unsigned int uiAddress, unsigned char ucData);
+void EEPROM_write_int16(unsigned int uiAddress, int16_t ucData);
+
 /**
  * @brief read from uiAdress return unsigned char data.
  * 
@@ -37,6 +39,8 @@ void EEPROM_write(unsigned int uiAddress, unsigned char ucData);
  * @return unsigned char 
  */
 unsigned char EEPROM_read(unsigned int uiAddress);
+
+int16_t EEPROM_read_int16(unsigned int uiAddress);
 
 
 

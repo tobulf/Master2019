@@ -25,7 +25,7 @@ volatile uint8_t buffer[14];
 int MPU6050_AXOFFSET = 675;
 int MPU6050_AYOFFSET = -65;
 int MPU6050_AZOFFSET = 15200;
-int MPU6050_TEMPOFFSET = -9800;
+int MPU6050_TEMPOFFSET = 0;
 uint8_t interrupt_byte;
 /*
  * read bytes from chip register

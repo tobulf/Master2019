@@ -32,17 +32,24 @@ void EEPROM_write(unsigned int uiAddress, unsigned char ucData)
 	EECR |= (1<<EEPE);
 }
 
-unsigned char EEPROM_read(unsigned int uiAddress)
-{
+void EEPROM_write_int16(unsigned int uiAddress, int16_t ucData){
+	EEPROM_write(uiAddress ,(uint8_t)((ucData>>8) & 0xFF));
+	EEPROM_write(uiAddress+1 ,(uint8_t)(ucData & 0xFF));
+}
+
+unsigned char EEPROM_read(unsigned int uiAddress){
 	/* Wait for completion of previous write */
-	while(EECR & (1<<EEPE))
-	;
+	while(EECR & (1<<EEPE));
 	/* Set up address register */
 	EEAR = uiAddress;
 	/* Start eeprom read by writing EERE */
 	EECR |= (1<<EERE);
 	/* Return data from data register */
 	return EEDR;
+}
+int16_t EEPROM_read_int16(unsigned int uiAddress){
+	int16_t temp = (int16_t)( (uint16_t)(EEPROM_read(uiAddress) << 8) | (uint8_t)EEPROM_read(uiAddress+1));
+	return temp;
 }
 void EEPROM_reset(){
 	for(uint16_t i = 0; i < EEPROM_end; i++){
