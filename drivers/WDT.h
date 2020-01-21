@@ -10,7 +10,6 @@
 #define WDT_H_
 
 #include <avr/interrupt.h> 
-#include "Debug.h"
 #include <avr/wdt.h>
 #include <avr/io.h>
 

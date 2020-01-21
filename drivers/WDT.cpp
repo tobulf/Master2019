@@ -46,6 +46,8 @@ void wdt_set_to_4s(){
 };
 
 void wdt_set_to_8s(){
+	wdt_enable(WDTO_8S);
+	wdt_reset();
 	WDTCSR |= (1<<WDP3) | (1<<WDP0);
 	WDTCSR &= ~((1<<WDP2) | (1<<WDP1));
 };

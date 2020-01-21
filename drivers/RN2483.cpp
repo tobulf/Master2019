@@ -18,14 +18,19 @@ unsigned char LoRa_COM::receive(void){
 };
 
 String LoRa_COM::get_answer(bool sleep){
+	wdt_reset();
 	String received;
 	unsigned char byte;
 	if(sleep){
 		/* enable Uart interrupt and Idle sleep mode */
+		WDT_off();
+		wdt_reset();
 		enable_RX_int();
 		enable_idle();
 		sleep_enable();
 		sleep_mode();
+		wdt_set_to_8s();
+		wdt_reset();
 	};
 	/*receive bytes and put them in a string: */
 	while( (byte = receive()) >= LF){

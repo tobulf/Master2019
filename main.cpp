@@ -27,7 +27,7 @@
 #include "drivers/mpu6050.h"
 #include "drivers/EEPROM.h"
 #include "drivers/MemoryAdresses.h"
-#include "EventQueue.h"
+#include "drivers/interrupt_button.h"
 
 
 
@@ -46,6 +46,7 @@ STATE prev_state;
 bool joined = false;
 bool gyro_data = false;
 bool fifo_started = false;
+bool dummy_msg = false;
 bool sent = false;
 
 uint8_t radio_buf[70];
@@ -65,12 +66,12 @@ Timer timer;
 
 int main (void){
 	sei();
-	wdt_enable(WDTO_8S);
 	wdt_set_to_8s();
 	wdt_RST_enable();
 	wdt_reset();
 	Leds.toogle(GREEN);
 	USART_init();
+	interrupt_button_init();
 	wdt_reset();
 	while (!joined){
 		joined = radio.init_OTAA(appEui,appKey);
@@ -87,36 +88,37 @@ int main (void){
 	bool threshold_found = false;
 	timer.reset();
 	timer.start();
-	while(!threshold_found){
-		wdt_reset();
-		mpu6050_getConvAccData(&x, &y, &x);
-		if (abs(x) > threshold){
-			threshold = x;
-		}
-		if (abs(y) > threshold){
-			threshold = y;
-		}
-		if (abs(z) > threshold){
-			threshold = z;
-		}
-		if (timer.read_ms()>10000){
-			threshold_found = true;
-			timer.stop();
-			timer.reset();
-			threshold = (threshold/65);
-			if (threshold>9){
-				threshold = 9;
-			}
-		}
-	}
+// 	while(!threshold_found){
+// 		wdt_reset();
+// 		mpu6050_getConvAccData(&x, &y, &x);
+// 		if (abs(x) > threshold){
+// 			threshold = x;
+// 		}
+// 		if (abs(y) > threshold){
+// 			threshold = y;
+// 		}
+// 		if (abs(z) > threshold){
+// 			threshold = z;
+// 		}
+// 		if (timer.read_ms()>10000){
+// 			threshold_found = true;
+// 			timer.stop();
+// 			timer.reset();
+// 			threshold = (threshold/65);
+// 			if (threshold>9){
+// 				threshold = 9;
+// 			}
+// 		}
+// 	}
 	wdt_reset();
-	mpu6050_set_interrupt_mot_thrshld(threshold);
+	mpu6050_set_interrupt_mot_thrshld(0);
 	mpu6050_get_interrupt_status();
 	mpu6050_enable_motion_interrupt();
 	mpu6050_enable_pin_interrupt();
 	mpu6050_lowPower_mode();
 	wdt_reset();
-	rtc.set_alarm_period(120);
+	interrupt_button_enable();
+	rtc.set_alarm_period(600);
 	rtc.start_alarm();
 	cur_state = ALIVE_TRANSMIT;
 	Leds.toogle(RED);
@@ -148,21 +150,22 @@ int main (void){
 				radio_buf[6] = (uint8_t)temperature;
 				AnalogIn.disable();
 				sent = false;
-				wdt_reset();
-				for (uint8_t i = 7; i<=54;i = i + 6){
-					mpu6050_FIFO_pop(&x, &y, &z);
-					radio_buf[i]=(uint8_t)((x>>8) & 0xFF);
-					radio_buf[i+1]=(uint8_t)(x & 0xFF);
-					radio_buf[i+2]=(uint8_t)((y>>8) & 0xFF);
-					radio_buf[i+3]=(uint8_t)(y & 0xFF);
-					radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
-					radio_buf[i+5]=(uint8_t)(z & 0xFF);
-				}
+// 				wdt_reset();
+// 				for (uint8_t i = 7; i<=54;i = i + 6){
+// 					mpu6050_FIFO_pop(&x, &y, &z);
+// 					radio_buf[i]=(uint8_t)((x>>8) & 0xFF);
+// 					radio_buf[i+1]=(uint8_t)(x & 0xFF);
+// 					radio_buf[i+2]=(uint8_t)((y>>8) & 0xFF);
+// 					radio_buf[i+3]=(uint8_t)(y & 0xFF);
+// 					radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
+// 					radio_buf[i+5]=(uint8_t)(z & 0xFF);
+// 				}
 				wdt_reset();
 				while (!sent){
-					sent = radio.TX_bytes(radio_buf, 53, EVENT);
+					sent = radio.TX_bytes(radio_buf, 7, EVENT);
 					wdt_reset();
 				}
+				wdt_reset();
 				mpu6050_get_FIFO_length(&size);
 				while(size>60){
 					sent = false;
@@ -175,24 +178,28 @@ int main (void){
 						radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
 						radio_buf[i+5]=(uint8_t)(z & 0xFF);
 					}
+					wdt_reset();
 					while (!sent){
-						wdt_reset();
 						sent = radio.TX_bytes(radio_buf, 48 , APPEND_DATA);
+						wdt_reset();
 					}
+					wdt_reset();
 					mpu6050_get_FIFO_length(&size);
-				}
+					}
 				radio.sleep();
 				wdt_reset();
 				mpu6050_FIFO_reset();
 				mpu6050_enable_motion_interrupt();
 				mpu6050_enable_pin_interrupt();
 				mpu6050_lowPower_mode();
+				wdt_reset();
 				cur_state = IDLE;
 				break;
 			
 				
 			case ALIVE_TRANSMIT:
 				wdt_reset();
+				dummy_msg = false;
 				Leds.reset();
 				Leds.turn_on(RED);
 				Leds.turn_on(GREEN);
@@ -232,12 +239,15 @@ int main (void){
 						if (sent){break;}
 					}
 					if (sent){break;}
+					wdt_reset();
 				}
 				wdt_reset();
 				radio.sleep();
 				mpu6050_enable_motion_interrupt();
 				mpu6050_enable_pin_interrupt();
 				mpu6050_lowPower_mode();
+				interrupt_button_enable();
+				wdt_reset();
 				cur_state = IDLE;
 				break;
 				
@@ -247,7 +257,7 @@ int main (void){
 				if(gyro_data){
 					cur_state = DATA_TRANSMIT;
 				}
-				else if (rtc.get_alarm_status()){
+				else if (rtc.get_alarm_status() || dummy_msg){
 					cur_state = ALIVE_TRANSMIT;
 				}
 				else{
@@ -299,7 +309,10 @@ ISR(INT0_vect){
 };
 
 ISR(INT1_vect){
-	printf("Dummy interrupt \n");
+	cli();
+	dummy_msg = true;
+	interrupt_button_disable();
+	sei();
 };
 
 ISR(WDT_vect){
