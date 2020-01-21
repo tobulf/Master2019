@@ -84,6 +84,7 @@ void mpu6050_FIFO_stop();
 void mpu6050_FIFO_reset(void);
 void mpu6050_get_FIFO_length(uint16_t* length);
 void mpu6050_FIFO_pop(int16_t* gxds, int16_t* gyds, int16_t* gzds);
+void mpu6050_FIFO_pop_raw(int16_t* gxds, int16_t* gyds, int16_t* gzds);
 void mpu6050_getConvTempData(int*ta);
 
 extern void mpu6050_setSleepDisabled(void);
