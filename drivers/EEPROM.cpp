@@ -48,7 +48,7 @@ unsigned char EEPROM_read(unsigned int uiAddress){
 	return EEDR;
 }
 int16_t EEPROM_read_int16(unsigned int uiAddress){
-	int16_t temp = (int16_t)( (uint16_t)(EEPROM_read(uiAddress) << 8) | (uint8_t)EEPROM_read(uiAddress+1));
+	int16_t temp = (int16_t)((uint16_t)(EEPROM_read(uiAddress) << 8) | (uint8_t)EEPROM_read(uiAddress+1));
 	return temp;
 }
 void EEPROM_reset(){

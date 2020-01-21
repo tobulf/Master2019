@@ -40,6 +40,7 @@ extern "C" {
 
 bool gyro_data = false;
 
+volatile uint8_t buf[14];
 int16_t x;
 int32_t x_mean = 0;
 int16_t y;
@@ -79,14 +80,14 @@ int main (void){
 	Leds.toogle(YELLOW);
 	mpu6050_get_FIFO_length(&size);
 	uint8_t times = 0;
+/*	size = 170;*/
 	while (size>4){
-		mpu6050_FIFO_pop(&x, &y, &z);
+		mpu6050_FIFO_pop_raw(&x, &y, &z);
 		x_mean = x_mean + x;
 		y_mean = y_mean + y;
 		z_mean = z_mean + z;
 		times ++;
 		mpu6050_get_FIFO_length(&size);
-		
 	}
 	bool temp_calibrated = false;
 	while(!temp_calibrated){
@@ -100,23 +101,27 @@ int main (void){
 		else{
 			break;
 		}
-		printf("%i %i \n", temperature_converted, temp_offset);
 	}
 	Leds.toogle(YELLOW);
 	x_mean = x_mean/times;
 	y_mean = y_mean/times;
 	z_mean = z_mean/times;
-	EEPROM_write_int16(MPU6050_CALIBRATED_AXOFFSET, x_mean);
-	EEPROM_write_int16(MPU6050_CALIBRATED_AXOFFSET, y_mean);
-	EEPROM_write_int16(MPU6050_CALIBRATED_AXOFFSET, z_mean);
-	EEPROM_write_int16(MPU6050_CALIBRATED_TEMPOFFSET, temp_offset);
-	EEPROM_write(MPU6050_CALIBRATED, 1);
+ 	EEPROM_write_int16(MPU6050_CALIBRATED_AXOFFSET, (int16_t)x_mean);
+ 	EEPROM_write_int16(MPU6050_CALIBRATED_AYOFFSET, (int16_t)y_mean);
+ 	EEPROM_write_int16(MPU6050_CALIBRATED_AZOFFSET, (int16_t)z_mean);
+ 	EEPROM_write_int16(MPU6050_CALIBRATED_TEMPOFFSET, (int16_t)temp_offset);
+ 	EEPROM_write(MPU6050_CALIBRATED, 1);
 	Leds.toogle(GREEN);
-	printf("%lu %lu %li %li \n", x_mean, y_mean, z_mean, temp_offset);
-	
-	
-	
-	
+	printf("Calculated: %li %li %li %i \n", x_mean, y_mean, z_mean, temp_offset);
+	mpu6050_init();
+	mpu6050_tempSensorEnabled();
+	while(true){
+		mpu6050_getConvTempData(&temperature_converted);
+		mpu6050_getConvAccData(&x,&y,&z);
+		printf("%i %i %i %i \n", x, y, z, temperature_converted);
+		_delay_ms(100);
+	};
+
 }
 	
 
@@ -124,10 +129,9 @@ ISR(INT0_vect){
 	cli();
 	mpu6050_disable_pin_interrupt();
 	sei();
-	sleep_disable();
+	mpu6050_FIFO_stop();
 	mpu6050_disable_interrupt();
 	mpu6050_get_interrupt_status();
-	mpu6050_FIFO_stop();
 	gyro_data = true;
 };
 

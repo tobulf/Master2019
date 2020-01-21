@@ -218,10 +218,10 @@ void mpu6050_init(void) {
 	mpu6050_writeBit(MPU6050_RA_USER_CTRL, MPU6050_USERCTRL_DMP_EN_BIT,0);
 	uint8_t calibrated = EEPROM_read(MPU6050_CALIBRATED);
 	if (calibrated==1){
-		MPU6050_AXOFFSET = (int16_t)EEPROM_read_int16(MPU6050_CALIBRATED_AXOFFSET);
-		MPU6050_AYOFFSET = (int16_t)EEPROM_read_int16(MPU6050_CALIBRATED_AYOFFSET);
-		MPU6050_AZOFFSET = (int16_t)EEPROM_read_int16(MPU6050_CALIBRATED_AZOFFSET);
-		MPU6050_TEMPOFFSET = (int16_t)EEPROM_read_int16(MPU6050_CALIBRATED_TEMPOFFSET);
+		MPU6050_AXOFFSET = (int)EEPROM_read_int16(MPU6050_CALIBRATED_AXOFFSET);
+		MPU6050_AYOFFSET = (int)EEPROM_read_int16(MPU6050_CALIBRATED_AYOFFSET);
+		MPU6050_AZOFFSET = (int)EEPROM_read_int16(MPU6050_CALIBRATED_AZOFFSET);
+		MPU6050_TEMPOFFSET = (int)EEPROM_read_int16(MPU6050_CALIBRATED_TEMPOFFSET);
 	}
 }
 
@@ -272,6 +272,11 @@ void mpu6050_FIFO_enable(){
 
 void mpu6050_FIFO_stop(){
 	mpu6050_writeBit(MPU6050_RA_FIFO_EN, MPU6050_ACCEL_FIFO_EN_BIT, 0);
+	//delete the 4 first bytes, since OVF means that the first 2 byte is lost.
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
 }
 
 void mpu6050_FIFO_disable(){
@@ -306,6 +311,25 @@ void mpu6050_FIFO_pop(int16_t* gxds, int16_t* gyds, int16_t* gzds){
 	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
 	gtemp = gtemp | buffer[0];
 	*gzds = (int16_t)(gtemp-MPU6050_AZOFFSET)/MPU6050_AZGAIN;
+}
+
+void mpu6050_FIFO_pop_raw(int16_t* gxds, int16_t* gyds, int16_t* gzds){
+	int16_t gtemp = 0;
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = (((int16_t)buffer[0]) << 8);
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = gtemp | buffer[0];
+	*gxds = gtemp;
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = (((int16_t)buffer[0]) << 8);
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = gtemp | buffer[0];
+	*gyds = gtemp;
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = (((int16_t)buffer[0]) << 8);
+	mpu6050_readByte(MPU6050_RA_FIFO_R_W, (uint8_t *)buffer);
+	gtemp = gtemp | buffer[0];
+	*gzds = gtemp;
 }
 
 
