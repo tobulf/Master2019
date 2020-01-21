@@ -71,6 +71,7 @@ int main (void){
 	wdt_reset();
 	Leds.toogle(GREEN);
 	USART_init();
+	radio.print_dev_eui();
 	interrupt_button_init();
 	wdt_reset();
 	while (!joined){
@@ -150,16 +151,6 @@ int main (void){
 				radio_buf[6] = (uint8_t)temperature;
 				AnalogIn.disable();
 				sent = false;
-// 				wdt_reset();
-// 				for (uint8_t i = 7; i<=54;i = i + 6){
-// 					mpu6050_FIFO_pop(&x, &y, &z);
-// 					radio_buf[i]=(uint8_t)((x>>8) & 0xFF);
-// 					radio_buf[i+1]=(uint8_t)(x & 0xFF);
-// 					radio_buf[i+2]=(uint8_t)((y>>8) & 0xFF);
-// 					radio_buf[i+3]=(uint8_t)(y & 0xFF);
-// 					radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
-// 					radio_buf[i+5]=(uint8_t)(z & 0xFF);
-// 				}
 				wdt_reset();
 				while (!sent){
 					sent = radio.TX_bytes(radio_buf, 7, EVENT);
