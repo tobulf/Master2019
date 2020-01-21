@@ -112,7 +112,7 @@ int main (void){
 // 		}
 // 	}
 	wdt_reset();
-	mpu6050_set_interrupt_mot_thrshld(0);
+	mpu6050_set_interrupt_mot_thrshld(1);
 	mpu6050_get_interrupt_status();
 	mpu6050_enable_motion_interrupt();
 	mpu6050_enable_pin_interrupt();
