@@ -95,7 +95,7 @@ int main (void){
 	mpu6050_lowPower_mode();
 	wdt_reset();
 	interrupt_button_enable();
-	rtc.set_alarm_period(600);
+	rtc.set_alarm_period(900);
 	rtc.start_alarm();
 	cur_state = ALIVE_TRANSMIT;
 	Leds.toogle(RED);
