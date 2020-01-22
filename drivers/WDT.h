@@ -20,6 +20,7 @@ void wdt_RST_enable();
 void wdt_set_to_8s();
 void wdt_set_to_4s();
 void wdt_set_to_2s();
+void wdt_set_to_1s();
 
 
 #endif /* WDT_H_ */

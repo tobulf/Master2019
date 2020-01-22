@@ -12,25 +12,19 @@
 unsigned char LoRa_COM::receive(void){
 	/* Wait for data to be received:*/
 	while ( !(UCSR0A & (1<<RXC)) );
-	wdt_reset();
 	/*Return data from buffer:*/
 	return UDR0;
 };
 
 String LoRa_COM::get_answer(bool sleep){
-	wdt_reset();
 	String received;
 	unsigned char byte;
 	if(sleep){
 		/* enable Uart interrupt and Idle sleep mode */
-		WDT_off();
-		wdt_reset();
 		enable_RX_int();
 		enable_idle();
 		sleep_enable();
 		sleep_mode();
-		wdt_set_to_8s();
-		wdt_reset();
 	};
 	/*receive bytes and put them in a string: */
 	while( (byte = receive()) >= LF){
@@ -327,6 +321,8 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	}
 	/* invalid data length, to long data to send(compared to current channel).*/
 	else if(answer.startsWith("invalid_da")){
+		wdt_set_to_1s();
+		_delay_ms(2000);
 		return false;
 	}
 	/* Transmission unsuccessful*/

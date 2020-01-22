@@ -87,30 +87,6 @@ int main (void){
 	mpu6050_init();
 	mpu6050_normalPower_mode();
 	bool threshold_found = false;
-	timer.reset();
-	timer.start();
-// 	while(!threshold_found){
-// 		wdt_reset();
-// 		mpu6050_getConvAccData(&x, &y, &x);
-// 		if (abs(x) > threshold){
-// 			threshold = x;
-// 		}
-// 		if (abs(y) > threshold){
-// 			threshold = y;
-// 		}
-// 		if (abs(z) > threshold){
-// 			threshold = z;
-// 		}
-// 		if (timer.read_ms()>10000){
-// 			threshold_found = true;
-// 			timer.stop();
-// 			timer.reset();
-// 			threshold = (threshold/65);
-// 			if (threshold>9){
-// 				threshold = 9;
-// 			}
-// 		}
-// 	}
 	wdt_reset();
 	mpu6050_set_interrupt_mot_thrshld(1);
 	mpu6050_get_interrupt_status();
@@ -152,10 +128,12 @@ int main (void){
 				AnalogIn.disable();
 				sent = false;
 				wdt_reset();
+				WDT_off();
 				while (!sent){
 					sent = radio.TX_bytes(radio_buf, 7, EVENT);
 					wdt_reset();
 				}
+				wdt_set_to_8s();
 				wdt_reset();
 				mpu6050_get_FIFO_length(&size);
 				while(size>60){
@@ -170,10 +148,12 @@ int main (void){
 						radio_buf[i+5]=(uint8_t)(z & 0xFF);
 					}
 					wdt_reset();
+					WDT_off();
 					while (!sent){
 						sent = radio.TX_bytes(radio_buf, 48 , APPEND_DATA);
 						wdt_reset();
 					}
+					wdt_set_to_8s();
 					wdt_reset();
 					mpu6050_get_FIFO_length(&size);
 					}
@@ -222,15 +202,18 @@ int main (void){
 				wdt_reset();
 				sent = false;
 				// Set DR to 5, try to send on the highest and then decrease if fail.
+				WDT_off();
 				for (uint8_t DR = 6; DR > 0; DR--){
 					radio.set_DR(DR-1);
 					for (uint8_t i = 0; i<3;i++){
 						sent = radio.TX_bytes(radio_buf, 13, KEEP_ALIVE);
-						wdt_reset();
 						if (sent){break;}
 					}
-					if (sent){break;}
-					wdt_reset();
+					if (sent){
+						wdt_set_to_8s();
+						break;
+						}
+						
 				}
 				wdt_reset();
 				radio.sleep();

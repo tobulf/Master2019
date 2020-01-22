@@ -35,12 +35,23 @@ void wdt_RST_enable(){
 	WDTCSR &= ~(1<<WDIE);
 };
 
+void wdt_set_to_1s(){
+	wdt_enable(WDTO_1S);
+	wdt_reset();
+	WDTCSR &= ~((1<<WDP3) | (1<<WDP0));
+	WDTCSR |= (1<<WDP2) | (1<<WDP1);
+};
+
 void wdt_set_to_2s(){
+	wdt_enable(WDTO_2S);
+	wdt_reset();
 	WDTCSR |= (1<<WDP2) | (1<<WDP1) | (1<<WDP0);
 	WDTCSR &= ~((1<<WDP3));
 };
 
 void wdt_set_to_4s(){
+	wdt_enable(WDTO_4S);
+	wdt_reset();
 	WDTCSR |= (1<<WDP3);
 	WDTCSR &= ~((1<<WDP2) | (1<<WDP1) | (1<<WDP0));
 };
