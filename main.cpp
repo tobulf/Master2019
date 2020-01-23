@@ -53,7 +53,6 @@ uint8_t radio_buf[70];
 int16_t x;
 int16_t y;
 int16_t z;
-int16_t threshold=0;
 int16_t temperature;
 uint32_t timestamp;
 uint32_t alive_timestamp;
@@ -86,7 +85,6 @@ int main (void){
 	wdt_reset();
 	mpu6050_init();
 	mpu6050_normalPower_mode();
-	bool threshold_found = false;
 	wdt_reset();
 	mpu6050_set_interrupt_mot_thrshld(1);
 	mpu6050_get_interrupt_status();
@@ -182,7 +180,7 @@ int main (void){
 				mpu6050_tempSensorEnabled();
 				mpu6050_getConvTempData(&temperature);
 				mpu6050_tempSensorDisabled();
-				mpu6050_getRawAccData(&x,&y,&z);
+				mpu6050_getConvAccData(&x,&y,&z);
 				wdt_reset();
 				alive_timestamp = rtc.get_epoch();
 				radio_buf[0]=(uint8_t)((alive_timestamp>>24) & 0xFF);
@@ -262,6 +260,7 @@ ISR(INT0_vect){
 	mpu6050_disable_pin_interrupt();
 	sei();
 	sleep_disable();
+	mpu6050_FIFO_stop();
 	mpu6050_disable_interrupt();
 	Leds.turn_on(YELLOW);
 	uint8_t interrupt = mpu6050_get_interrupt_status();
@@ -275,11 +274,9 @@ ISR(INT0_vect){
 		mpu6050_enable_pin_interrupt();
 	}
 	else {
-		mpu6050_FIFO_stop();
 		fifo_started = false;
 		gyro_data = true;
 	}
-
 };
 
 ISR(INT1_vect){
