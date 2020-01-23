@@ -4,7 +4,7 @@
 
 
 /* Declare different baudrates:*/
-#define LORA_BAUD 9600UL
+#define LORA_BAUD 57600UL
 /* Declare UART Message terminators: */
 #define LF (uint8_t)10
 #define CR (uint8_t)13
@@ -143,17 +143,14 @@ bool RN2483::assert_response(String response){
 	return true;
 };
 
-bool RN2483::init_OTAA(String app_EUI, String app_key){
+bool RN2483::init_OTAA(String app_EUI, String app_key, String dev_eui){
 	bool success = false;
 	String answer;
 	/*Reset chip and set to 868.*/
 	send_command("mac reset 868");
 	if (!assert_response(get_answer())){return false;};
-	/*Get device EUI*/
-	send_command("sys get hweui");
-	answer = get_answer();
 	/*Set the device EUI*/
-	send_command(String("mac set deveui ")+=answer);
+	send_command(String("mac set deveui ")+=dev_eui);
 	if (!assert_response(get_answer())){return false;};
 	/* Set the application EUI*/
 	send_command(String("mac set appeui ")+=app_EUI);

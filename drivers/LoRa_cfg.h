@@ -12,5 +12,6 @@
 
 const char *appEui = "70B3D57ED0028E22";
 const char *appKey = "5C8FE732E0A955920BB0248C120C631D";
+const char *devEui = "0004A30B00EB9F66";
 
 #endif /* LORA_CFG_H_ */

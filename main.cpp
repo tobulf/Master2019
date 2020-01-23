@@ -75,7 +75,7 @@ int main (void){
 	interrupt_button_init();
 	wdt_reset();
 	while (!joined){
-		joined = radio.init_OTAA(appEui,appKey);
+		joined = radio.init_OTAA(appEui,appKey,devEui);
 		wdt_reset();
 	}
 	Leds.toogle(GREEN);
@@ -86,7 +86,6 @@ int main (void){
 	wdt_reset();
 	mpu6050_init();
 	mpu6050_normalPower_mode();
-	bool threshold_found = false;
 	wdt_reset();
 	mpu6050_set_interrupt_mot_thrshld(1);
 	mpu6050_get_interrupt_status();
@@ -95,7 +94,7 @@ int main (void){
 	mpu6050_lowPower_mode();
 	wdt_reset();
 	interrupt_button_enable();
-	rtc.set_alarm_period(600);
+	rtc.set_alarm_period(900);
 	rtc.start_alarm();
 	cur_state = ALIVE_TRANSMIT;
 	Leds.toogle(RED);
@@ -262,6 +261,7 @@ ISR(INT0_vect){
 	mpu6050_disable_pin_interrupt();
 	sei();
 	sleep_disable();
+	mpu6050_FIFO_stop();
 	mpu6050_disable_interrupt();
 	Leds.turn_on(YELLOW);
 	uint8_t interrupt = mpu6050_get_interrupt_status();
@@ -275,7 +275,6 @@ ISR(INT0_vect){
 		mpu6050_enable_pin_interrupt();
 	}
 	else {
-		mpu6050_FIFO_stop();
 		fifo_started = false;
 		gyro_data = true;
 	}

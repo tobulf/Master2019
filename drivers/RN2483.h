@@ -122,7 +122,7 @@ class RN2483: public LoRa_COM {
 	 * @return true 
 	 * @return false 
 	 */
-	bool init_OTAA(String app_EUI, String app_key);
+	bool init_OTAA(String app_EUI, String app_key, String dev_eui);
 	/**
 	 * @brief Set Datarate for the Transmission(0-5). SF12-SF7. 
 	 * 

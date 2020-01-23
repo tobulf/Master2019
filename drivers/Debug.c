@@ -13,7 +13,7 @@
 #endif
 
 #ifndef DEBUG_BAUD
-	#define DEBUG_BAUD 9600UL
+	#define DEBUG_BAUD 57600UL
 #endif
 
 
