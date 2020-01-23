@@ -153,7 +153,7 @@ bool RN2483::init_OTAA(String app_EUI, String app_key){
 	send_command("sys get hweui");
 	answer = get_answer();
 	/*Set the device EUI*/
-	send_command(String("mac set deveui ")+=answer);
+	send_command(String("mac set deveui ")+=String("00E11FBD2B01E731"));
 	if (!assert_response(get_answer())){return false;};
 	/* Set the application EUI*/
 	send_command(String("mac set appeui ")+=app_EUI);
