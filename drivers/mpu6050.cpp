@@ -207,7 +207,7 @@ void mpu6050_init(void) {
 	//set DLPF bandwidth to 42Hz
 	mpu6050_writeBits(MPU6050_RA_CONFIG, MPU6050_CFG_DLPF_CFG_BIT, MPU6050_CFG_DLPF_CFG_LENGTH, MPU6050_DLPF_BW_42);
     //set sample rate
-	mpu6050_writeByte(MPU6050_RA_SMPLRT_DIV, 49); //1khz / (1 + 49) = 20Hz
+	mpu6050_writeByte(MPU6050_RA_SMPLRT_DIV, 5); //1khz / (1 + 5) = 166Hz
 	//set gyro range
 	mpu6050_writeBits(MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_FS_SEL_BIT, MPU6050_GCONFIG_FS_SEL_LENGTH, MPU6050_GYRO_FS_2000);
 	//set accel range +-2g

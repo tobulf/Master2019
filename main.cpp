@@ -92,6 +92,7 @@ int main (void){
 	mpu6050_enable_motion_interrupt();
 	mpu6050_enable_pin_interrupt();
 	mpu6050_lowPower_mode();
+	//mpu6050_reset();
 	wdt_reset();
 	interrupt_button_enable();
 	rtc.set_alarm_period(900);
