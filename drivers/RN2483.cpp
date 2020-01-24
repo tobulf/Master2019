@@ -123,6 +123,7 @@ LoRa_COM::LoRa_COM(){
 
 RN2483::RN2483(){
 	new_msg = false;
+	failed = 0;
 	send_command("sys reset");
 	/*Empty the buffer.*/
 	get_answer();
@@ -194,6 +195,7 @@ void RN2483::print_dev_eui(){
 
 bool RN2483::set_DR(uint8_t DR){
 	send_command(String("mac set dr ")+=String(DR));
+	cur_DR = DR;
 	return assert_response(get_answer());
 };
 
@@ -281,39 +283,47 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 			buf[i] = hex_string_to_byte(hex_string);
 		}
 		new_msg = true;
+		failed = 0;
 		return true;
 	}
 	/* Case: no downlink*/
 	else if(answer.startsWith("mac_tx")){
+		failed = 0;
 		return true;
 	}
 	/* Chip is in Busy state*/
 	else if(answer.startsWith("bus")){
+		failed++;
 		return false;
 	}
 	
 	/* Case: Not joined*/
 	else if(answer.startsWith("not")){
+		failed++;
 		return false;
 	}
 	
 	/* Case: no free channel*/
 	else if(answer.startsWith("no_free")){
+		failed++;
 		return false;
 	}
 	
 	/* Case: silent state*/
 	else if(answer.startsWith("sil")){
+		failed++;
 		return false;
 	}
 	
 	/* Case: Frame counter rolled over*/
 	else if(answer.startsWith("fra")){
+		failed++;
 		return false;
 	}
 
 	/* Mac is set to pause, not resumed*/
 	else if(answer.startsWith("mac_pa")){
+		failed++;
 		return false;
 	}
 	/* invalid data length, to long data to send(compared to current channel).*/
@@ -324,6 +334,13 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	}
 	/* Transmission unsuccessful*/
 	else if(answer.startsWith("mac_er")){
+		failed++;
+		if (failed > 2){
+			if (cur_DR >= 0){
+				cur_DR = cur_DR - 1;
+				set_DR(cur_DR);
+			}
+		}
 		return false;
 	}
 	else{
