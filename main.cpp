@@ -85,14 +85,7 @@ int main (void){
 	//WDT_reset();
 	mpu6050_init();
 	mpu6050_normalPower_mode();
-	
-	mpu6050_set_sensitivity(EIGHT_G);
-	while(true){
-		mpu6050_getConvAccData(&x,&y,&z);
-		printf("Acc data: %i %i %i \n", x, y, z);
-		_delay_ms(1000);
-	}
-	
+	mpu6050_set_sensitivity(TWO_G);
 	WDT_reset();
 	mpu6050_set_interrupt_mot_thrshld(1);
 	mpu6050_get_interrupt_status();
