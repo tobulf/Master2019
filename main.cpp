@@ -65,6 +65,7 @@ int main (void){
 	mpu6050_normalPower_mode();
 	Leds.toogle(RED);
 	_delay_ms(1000);
+	mpu6050_set_sensitivity(TWO_G);
 	mpu6050_tempSensorEnabled();
 	mpu6050_getRawTempData(&temperature_raw);
 	mpu6050_tempSensorDisabled();
@@ -83,10 +84,14 @@ int main (void){
 /*	size = 170;*/
 	while (size>4){
 		mpu6050_FIFO_pop_raw(&x, &y, &z);
+		//printf("FIFO: %i %i %i \n",x,y,z);
 		x_mean = x_mean + x;
 		y_mean = y_mean + y;
 		z_mean = z_mean + z;
 		times ++;
+		//mpu6050_getRawAccData(&x,&y,&z);
+		//printf("RAW: %i %i %i \n",x,y,z);
+		//_delay_ms(1000);
 		mpu6050_get_FIFO_length(&size);
 	}
 	bool temp_calibrated = false;
@@ -113,6 +118,7 @@ int main (void){
  	EEPROM_write(MPU6050_CALIBRATED, 1);
 	Leds.toogle(GREEN);
 	printf("Calculated: %li %li %li %i \n", x_mean, y_mean, z_mean, temp_offset);
+	_delay_ms(10000);
 	mpu6050_init();
 	mpu6050_tempSensorEnabled();
 	while(true){

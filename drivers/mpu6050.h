@@ -25,7 +25,7 @@ References:
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+enum MPU6050_SENSITIVITY {TWO_G = 0, FOUR_G, EIGHT_G, SIXTEEN_G};
 //i2c settings
 #define MPU6050_I2CFLEURYPATH "i2cmaster.h" //define the path to i2c fleury lib
 #define MPU6050_I2CINIT 0 //init i2c
@@ -71,7 +71,7 @@ extern "C" {
 //functions
 extern void mpu6050_init(void);
 extern uint8_t mpu6050_testConnection(void);
-
+void mpu6050_set_sensitivity(MPU6050_SENSITIVITY sensitivity);
 
 void mpu6050_getRawGyroData(int16_t* gx, int16_t* gy, int16_t* gz);
 void mpu6050_getRawAccData(int16_t* ax, int16_t* ay, int16_t* az);
