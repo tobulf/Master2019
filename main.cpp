@@ -65,34 +65,42 @@ Timer timer;
 
 int main (void){
 	sei();
-	wdt_set_to_8s();
-	wdt_RST_enable();
-	wdt_reset();
-	Leds.toogle(GREEN);
+	//wdt_set_to_8s();
+	//wdt_INT_enable();
+	//wdt_reset();
+	//Leds.toogle(GREEN);
 	USART_init();
-	radio.print_dev_eui();
-	interrupt_button_init();
-	wdt_reset();
-	while (!joined){
-		joined = radio.init_OTAA(appEui,appKey,devEui);
-		wdt_reset();
-	}
-	Leds.toogle(GREEN);
-	Leds.toogle(RED);
-	radio.set_duty_cycle(0);
-	radio.set_RX_window_size(1000);
-	radio.sleep();
-	wdt_reset();
+	//radio.print_dev_eui();
+	//interrupt_button_init();
+	//WDT_reset();
+	//while (!joined){
+	//	joined = radio.init_OTAA(appEui,appKey,devEui);
+	//	wdt_reset();
+	//}
+	//Leds.toogle(GREEN);
+	//Leds.toogle(RED);
+	//radio.set_duty_cycle(0);
+	//radio.set_RX_window_size(1000);
+	//radio.sleep();
+	//WDT_reset();
 	mpu6050_init();
 	mpu6050_normalPower_mode();
-	wdt_reset();
+	
+	mpu6050_set_sensitivity(EIGHT_G);
+	while(true){
+		mpu6050_getConvAccData(&x,&y,&z);
+		printf("Acc data: %i %i %i \n", x, y, z);
+		_delay_ms(1000);
+	}
+	
+	WDT_reset();
 	mpu6050_set_interrupt_mot_thrshld(1);
 	mpu6050_get_interrupt_status();
 	mpu6050_enable_motion_interrupt();
 	mpu6050_enable_pin_interrupt();
 	mpu6050_lowPower_mode();
 	//mpu6050_reset();
-	wdt_reset();
+	WDT_reset();
 	interrupt_button_enable();
 	rtc.set_alarm_period(900);
 	rtc.start_alarm();
@@ -102,7 +110,7 @@ int main (void){
 	while (true){
 		switch (cur_state){
 			case DATA_TRANSMIT:
-				wdt_reset();
+				WDT_reset();
 				Leds.reset();
 				Leds.turn_on(YELLOW);
 				Leds.turn_on(GREEN);
@@ -126,14 +134,13 @@ int main (void){
 				radio_buf[6] = (uint8_t)temperature;
 				AnalogIn.disable();
 				sent = false;
-				wdt_reset();
-				WDT_off();
+				wdt_set_to_16s();
 				while (!sent){
 					sent = radio.TX_bytes(radio_buf, 7, EVENT);
-					wdt_reset();
+					WDT_reset();
 				}
 				wdt_set_to_8s();
-				wdt_reset();
+				WDT_reset();
 				mpu6050_get_FIFO_length(&size);
 				while(size>60){
 					sent = false;
@@ -146,18 +153,16 @@ int main (void){
 						radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
 						radio_buf[i+5]=(uint8_t)(z & 0xFF);
 					}
-					wdt_reset();
-					WDT_off();
+					wdt_set_to_16s();
 					while (!sent){
 						sent = radio.TX_bytes(radio_buf, 48 , APPEND_DATA);
-						wdt_reset();
+						WDT_reset();
 					}
 					wdt_set_to_8s();
-					wdt_reset();
 					mpu6050_get_FIFO_length(&size);
 					}
 				radio.sleep();
-				wdt_reset();
+				WDT_reset();
 				mpu6050_FIFO_reset();
 				mpu6050_enable_motion_interrupt();
 				mpu6050_enable_pin_interrupt();
@@ -168,21 +173,20 @@ int main (void){
 			
 				
 			case ALIVE_TRANSMIT:
-				wdt_reset();
+				WDT_reset();
 				dummy_msg = false;
 				Leds.reset();
 				Leds.turn_on(RED);
 				Leds.turn_on(GREEN);
 				mpu6050_disable_pin_interrupt();
 				AnalogIn.enable();
-				wdt_reset();
+				WDT_reset();
 				radio.wake();
 				mpu6050_normalPower_mode();
 				mpu6050_tempSensorEnabled();
 				mpu6050_getConvTempData(&temperature);
 				mpu6050_tempSensorDisabled();
 				mpu6050_getConvAccData(&x,&y,&z);
-				wdt_reset();
 				alive_timestamp = rtc.get_epoch();
 				radio_buf[0]=(uint8_t)((alive_timestamp>>24) & 0xFF);
 				radio_buf[1]=(uint8_t)((alive_timestamp>>16) & 0xFF);
@@ -198,14 +202,14 @@ int main (void){
 				radio_buf[11]=(uint8_t)((z>>8) & 0xFF);
 				radio_buf[12]=(uint8_t)(z & 0xFF);
 				AnalogIn.disable();
-				wdt_reset();
 				sent = false;
 				// Set DR to 5, try to send on the highest and then decrease if fail.
-				WDT_off();
+				wdt_set_to_16s();
 				for (uint8_t DR = 6; DR > 0; DR--){
 					radio.set_DR(DR-1);
 					for (uint8_t i = 0; i<3;i++){
 						sent = radio.TX_bytes(radio_buf, 13, KEEP_ALIVE);
+						WDT_reset();
 						if (sent){break;}
 					}
 					if (sent){
@@ -214,18 +218,16 @@ int main (void){
 						}
 						
 				}
-				wdt_reset();
 				radio.sleep();
 				mpu6050_enable_motion_interrupt();
 				mpu6050_enable_pin_interrupt();
 				mpu6050_lowPower_mode();
 				interrupt_button_enable();
-				wdt_reset();
+				WDT_reset();
 				cur_state = IDLE;
 				break;
 				
 			case IDLE:
-				wdt_reset();
 				wdt_set_to_8s();
 				if(gyro_data){
 					cur_state = DATA_TRANSMIT;
@@ -235,7 +237,7 @@ int main (void){
 				}
 				else{
 					cur_state = SLEEP;
-					wdt_reset();
+					WDT_reset();
 					WDT_off();
 				}
 				Leds.reset();
@@ -287,7 +289,4 @@ ISR(INT1_vect){
 	sei();
 };
 
-ISR(WDT_vect){
-	WDT_off();
-	printf("WDT! \n");
-};
+
