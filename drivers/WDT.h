@@ -14,9 +14,12 @@
 #include <avr/io.h>
 
 void WDT_off();
+void WDT_reset();
 void wdt_INT_enable();
 void wdt_INT_RST_enable();
 void wdt_RST_enable();
+void wdt_set_to_24s();
+void wdt_set_to_16s();
 void wdt_set_to_8s();
 void wdt_set_to_4s();
 void wdt_set_to_2s();

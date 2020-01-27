@@ -4,7 +4,7 @@
 
 
 /* Declare different baudrates:*/
-#define LORA_BAUD 57600UL
+#define LORA_BAUD 9600UL
 /* Declare UART Message terminators: */
 #define LF (uint8_t)10
 #define CR (uint8_t)13
@@ -123,6 +123,7 @@ LoRa_COM::LoRa_COM(){
 
 RN2483::RN2483(){
 	new_msg = false;
+	failed = 0;
 	send_command("sys reset");
 	/*Empty the buffer.*/
 	get_answer();
@@ -170,7 +171,7 @@ bool RN2483::init_OTAA(String app_EUI, String app_key, String dev_eui){
 	/* Try to join the a LoRa Network...*/
 	//If it fails, retry 3 times.
 	for(uint8_t i=0;i<3;i++){
-		wdt_reset();
+		WDT_reset();
 		send_command(String("mac join otaa"));
 		get_answer();
 		answer = get_answer(true);
@@ -194,6 +195,7 @@ void RN2483::print_dev_eui(){
 
 bool RN2483::set_DR(uint8_t DR){
 	send_command(String("mac set dr ")+=String(DR));
+	cur_DR = DR;
 	return assert_response(get_answer());
 };
 
@@ -276,44 +278,53 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	/*Assert answer: */
 	answer = get_answer(true);
 	if (answer.startsWith("mac_rx")){
+		DL_port = ((uint8_t)answer[7]-48);
 		for(uint8_t i = 0; i < 11;i++){
 			uint8_t hex_string[2] = {(uint8_t)answer[2*i+9],(uint8_t)answer[2*i+10]};
 			buf[i] = hex_string_to_byte(hex_string);
 		}
 		new_msg = true;
+		failed = 0;
 		return true;
 	}
 	/* Case: no downlink*/
 	else if(answer.startsWith("mac_tx")){
+		failed = 0;
 		return true;
 	}
 	/* Chip is in Busy state*/
 	else if(answer.startsWith("bus")){
+		failed++;
 		return false;
 	}
 	
 	/* Case: Not joined*/
 	else if(answer.startsWith("not")){
+		failed++;
 		return false;
 	}
 	
 	/* Case: no free channel*/
 	else if(answer.startsWith("no_free")){
+		failed++;
 		return false;
 	}
 	
 	/* Case: silent state*/
 	else if(answer.startsWith("sil")){
+		failed++;
 		return false;
 	}
 	
 	/* Case: Frame counter rolled over*/
 	else if(answer.startsWith("fra")){
+		failed++;
 		return false;
 	}
 
 	/* Mac is set to pause, not resumed*/
 	else if(answer.startsWith("mac_pa")){
+		failed++;
 		return false;
 	}
 	/* invalid data length, to long data to send(compared to current channel).*/
@@ -324,6 +335,13 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	}
 	/* Transmission unsuccessful*/
 	else if(answer.startsWith("mac_er")){
+		failed++;
+		if (failed > 2){
+			if (cur_DR >= 0){
+				cur_DR = cur_DR - 1;
+				set_DR(cur_DR);
+			}
+		}
 		return false;
 	}
 	else{
@@ -347,6 +365,9 @@ uint8_t* RN2483::read_downlink_buf(){
 	return false;
 };
 
+uint8_t RN2483::get_downlink_port(){
+	return DL_port;
+}
 
 void RN2483::sleep(uint16_t length){
 	if (length<100){

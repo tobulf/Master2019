@@ -7,6 +7,9 @@
 
 #include "WDT.h"
 
+uint8_t timeouts = 0;
+uint8_t max_timeouts = 0;
+
 void WDT_off(void){
 	cli();
 	wdt_reset();
@@ -18,6 +21,11 @@ void WDT_off(void){
 	/* Turn off WDT */
 	WDTCSR = 0x00;
 	sei();
+};
+
+void WDT_reset(){
+	wdt_reset();
+	timeouts = 0;
 };
 
 void wdt_INT_enable(){
@@ -61,4 +69,34 @@ void wdt_set_to_8s(){
 	wdt_reset();
 	WDTCSR |= (1<<WDP3) | (1<<WDP0);
 	WDTCSR &= ~((1<<WDP2) | (1<<WDP1));
+	max_timeouts = 0;
+};
+
+void wdt_set_to_16s(){
+	wdt_enable(WDTO_8S);
+	wdt_reset();
+	WDTCSR |= (1<<WDP3) | (1<<WDP0);
+	WDTCSR &= ~((1<<WDP2) | (1<<WDP1));
+	max_timeouts = 1;
+};
+
+void wdt_set_to_24s(){
+	wdt_enable(WDTO_8S);
+	wdt_reset();
+	WDTCSR |= (1<<WDP3) | (1<<WDP0);
+	WDTCSR &= ~((1<<WDP2) | (1<<WDP1));
+	max_timeouts = 2;
+};
+
+
+ISR(WDT_vect){
+	cli();
+	timeouts++;
+	wdt_set_to_8s();
+	sei();
+	if (timeouts > max_timeouts){
+		wdt_RST_enable();
+		wdt_set_to_1s();
+		wdt_enable(WDTO_15MS);
+	}
 };
