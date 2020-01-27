@@ -167,6 +167,7 @@ class RN2483: public LoRa_COM {
 	
 	bool unread_downlink();
 	uint8_t* read_downlink_buf();
+	uint8_t get_downlink_port();
 	/**
 	 * @brief Set the RN2483 in sleep mode indefinitely if no arg passed or: min 100ms to 65s.
 	 * 
@@ -190,6 +191,7 @@ class RN2483: public LoRa_COM {
 	String char_to_hex(uint8_t character);
 	uint8_t hex_string_to_byte(uint8_t* hex_string);
 	uint8_t buf[11];
+	uint8_t DL_port;
 	uint8_t cur_DR;
 	uint8_t failed;
 	bool new_msg;

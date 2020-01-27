@@ -50,6 +50,7 @@ bool dummy_msg = false;
 bool sent = false;
 
 uint8_t radio_buf[70];
+uint8_t* downlink_buf;
 int16_t x;
 int16_t y;
 int16_t z;
@@ -65,29 +66,29 @@ Timer timer;
 
 int main (void){
 	sei();
-	//wdt_set_to_8s();
-	//wdt_INT_enable();
-	//wdt_reset();
-	//Leds.toogle(GREEN);
+	wdt_set_to_16s();
+	wdt_INT_enable();
+	wdt_reset();
+	Leds.toogle(GREEN);
 	USART_init();
-	//radio.print_dev_eui();
-	//interrupt_button_init();
-	//WDT_reset();
-	//while (!joined){
-	//	joined = radio.init_OTAA(appEui,appKey,devEui);
-	//	wdt_reset();
-	//}
-	//Leds.toogle(GREEN);
-	//Leds.toogle(RED);
-	//radio.set_duty_cycle(0);
-	//radio.set_RX_window_size(1000);
-	//radio.sleep();
-	//WDT_reset();
+	radio.print_dev_eui();
+	interrupt_button_init();
+	WDT_reset();
+	while (!joined){
+		joined = radio.init_OTAA(appEui,appKey,devEui);
+		WDT_reset();
+	}
+	Leds.toogle(GREEN);
+	Leds.toogle(RED);
+	radio.set_duty_cycle(0);
+	radio.set_RX_window_size(1000);
+	radio.sleep();
+	WDT_reset();
 	mpu6050_init();
 	mpu6050_normalPower_mode();
 	mpu6050_set_sensitivity(TWO_G);
 	WDT_reset();
-	mpu6050_set_interrupt_mot_thrshld(1);
+	mpu6050_set_interrupt_mot_thrshld(250);
 	mpu6050_get_interrupt_status();
 	mpu6050_enable_motion_interrupt();
 	mpu6050_enable_pin_interrupt();
@@ -104,6 +105,7 @@ int main (void){
 		switch (cur_state){
 			case DATA_TRANSMIT:
 				WDT_reset();
+				wdt_set_to_24s();
 				Leds.reset();
 				Leds.turn_on(YELLOW);
 				Leds.turn_on(GREEN);
@@ -127,12 +129,11 @@ int main (void){
 				radio_buf[6] = (uint8_t)temperature;
 				AnalogIn.disable();
 				sent = false;
-				wdt_set_to_16s();
+				WDT_reset();
 				while (!sent){
 					sent = radio.TX_bytes(radio_buf, 7, EVENT);
 					WDT_reset();
 				}
-				wdt_set_to_8s();
 				WDT_reset();
 				mpu6050_get_FIFO_length(&size);
 				while(size>60){
@@ -146,34 +147,33 @@ int main (void){
 						radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
 						radio_buf[i+5]=(uint8_t)(z & 0xFF);
 					}
-					wdt_set_to_16s();
+					WDT_reset();
 					while (!sent){
 						sent = radio.TX_bytes(radio_buf, 48 , APPEND_DATA);
 						WDT_reset();
 					}
-					wdt_set_to_8s();
 					mpu6050_get_FIFO_length(&size);
-					}
+				}
 				radio.sleep();
 				WDT_reset();
 				mpu6050_FIFO_reset();
 				mpu6050_enable_motion_interrupt();
 				mpu6050_enable_pin_interrupt();
 				mpu6050_lowPower_mode();
-				wdt_reset();
+				WDT_reset();
 				cur_state = IDLE;
 				break;
 			
 				
 			case ALIVE_TRANSMIT:
 				WDT_reset();
+				wdt_set_to_24s();
 				dummy_msg = false;
 				Leds.reset();
 				Leds.turn_on(RED);
 				Leds.turn_on(GREEN);
 				mpu6050_disable_pin_interrupt();
 				AnalogIn.enable();
-				WDT_reset();
 				radio.wake();
 				mpu6050_normalPower_mode();
 				mpu6050_tempSensorEnabled();
@@ -197,7 +197,7 @@ int main (void){
 				AnalogIn.disable();
 				sent = false;
 				// Set DR to 5, try to send on the highest and then decrease if fail.
-				wdt_set_to_16s();
+				WDT_reset();
 				for (uint8_t DR = 6; DR > 0; DR--){
 					radio.set_DR(DR-1);
 					for (uint8_t i = 0; i<3;i++){
@@ -205,12 +205,10 @@ int main (void){
 						WDT_reset();
 						if (sent){break;}
 					}
-					if (sent){
-						wdt_set_to_8s();
-						break;
-						}
-						
+					if (sent){break;}
+					WDT_reset();
 				}
+				WDT_reset();
 				radio.sleep();
 				mpu6050_enable_motion_interrupt();
 				mpu6050_enable_pin_interrupt();
@@ -227,6 +225,37 @@ int main (void){
 				}
 				else if (rtc.get_alarm_status() || dummy_msg){
 					cur_state = ALIVE_TRANSMIT;
+				}
+				else if (radio.unread_downlink()){
+					downlink_buf = radio.read_downlink_buf();
+					uint8_t port = radio.get_downlink_port();
+					if (port == 3){
+						mpu6050_set_interrupt_mot_thrshld(downlink_buf[0]);
+					}
+					else if (port == 5){
+						switch (downlink_buf[0])
+						{
+						case TWO_G:
+							mpu6050_set_sensitivity(TWO_G);
+							printf("2G\n");
+							break;
+						case FOUR_G:
+							mpu6050_set_sensitivity(FOUR_G);
+							printf("4G\n");
+							break;
+						case EIGHT_G:
+							mpu6050_set_sensitivity(EIGHT_G);
+							printf("8G\n");
+							break;
+						case SIXTEEN_G:
+							mpu6050_set_sensitivity(SIXTEEN_G);
+							printf("16G\n");
+							break;
+						default:
+							break;
+						}
+						
+					}
 				}
 				else{
 					cur_state = SLEEP;

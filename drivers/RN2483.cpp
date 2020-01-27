@@ -4,7 +4,7 @@
 
 
 /* Declare different baudrates:*/
-#define LORA_BAUD 57600UL
+#define LORA_BAUD 9600UL
 /* Declare UART Message terminators: */
 #define LF (uint8_t)10
 #define CR (uint8_t)13
@@ -171,7 +171,7 @@ bool RN2483::init_OTAA(String app_EUI, String app_key, String dev_eui){
 	/* Try to join the a LoRa Network...*/
 	//If it fails, retry 3 times.
 	for(uint8_t i=0;i<3;i++){
-		wdt_reset();
+		WDT_reset();
 		send_command(String("mac join otaa"));
 		get_answer();
 		answer = get_answer(true);
@@ -278,6 +278,7 @@ bool RN2483::TX_bytes(uint8_t* data, uint8_t num_bytes, uint8_t port){
 	/*Assert answer: */
 	answer = get_answer(true);
 	if (answer.startsWith("mac_rx")){
+		DL_port = ((uint8_t)answer[7]-48);
 		for(uint8_t i = 0; i < 11;i++){
 			uint8_t hex_string[2] = {(uint8_t)answer[2*i+9],(uint8_t)answer[2*i+10]};
 			buf[i] = hex_string_to_byte(hex_string);
@@ -364,6 +365,9 @@ uint8_t* RN2483::read_downlink_buf(){
 	return false;
 };
 
+uint8_t RN2483::get_downlink_port(){
+	return DL_port;
+}
 
 void RN2483::sleep(uint16_t length){
 	if (length<100){
