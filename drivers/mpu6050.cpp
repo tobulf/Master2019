@@ -208,8 +208,6 @@ void mpu6050_init(void) {
 	mpu6050_writeBits(MPU6050_RA_CONFIG, MPU6050_CFG_DLPF_CFG_BIT, MPU6050_CFG_DLPF_CFG_LENGTH, MPU6050_DLPF_BW_42);
     //set sample rate
 	mpu6050_writeByte(MPU6050_RA_SMPLRT_DIV, 5); //1khz / (1 + 5) = 166Hz
-	//set sample rate
-	mpu6050_writeByte(MPU6050_RA_SMPLRT_DIV, 49); //1khz / (1 + 49) = 20Hz
 	//set gyro range
 	mpu6050_writeBits(MPU6050_RA_GYRO_CONFIG, MPU6050_GCONFIG_FS_SEL_BIT, MPU6050_GCONFIG_FS_SEL_LENGTH, MPU6050_GYRO_FS_2000);
 	//set accel range +-2g
@@ -404,7 +402,7 @@ void mpu6050_getConvTempData(int16_t*ta){
 void mpu6050_init_interrupt() {
 	/* Enable ext-interrupt ISR0: */
 	EICRA &= ~(1<<ISC00);
-	EICRA &= ~(1<<ISC01);
+	EICRA |= (1<<ISC11);
 	DDRD  |= (0<<2);
 	PORTD |= (0<<2);
 	MCUCR &= ~(1<<PUD);

@@ -84,17 +84,16 @@ int main (void){
 	radio.set_RX_window_size(1000);
 	radio.sleep();
 	WDT_reset();
+	mpu6050_reset();
 	mpu6050_init();
 	mpu6050_normalPower_mode();
 	mpu6050_set_sensitivity(TWO_G);
 	WDT_reset();
-	mpu6050_set_interrupt_mot_thrshld(250);
+	mpu6050_set_interrupt_mot_thrshld(1);
 	mpu6050_get_interrupt_status();
 	mpu6050_enable_motion_interrupt();
 	mpu6050_enable_pin_interrupt();
 	mpu6050_lowPower_mode();
-	//mpu6050_reset();
-	wdt_reset();
 	WDT_reset();
 	interrupt_button_enable();
 	rtc.set_alarm_period(900);
@@ -130,12 +129,10 @@ int main (void){
 				radio_buf[6] = (uint8_t)temperature;
 				AnalogIn.disable();
 				sent = false;
-				WDT_reset();
+				WDT_off();
 				while (!sent){
 					sent = radio.TX_bytes(radio_buf, 7, EVENT);
-					WDT_reset();
 				}
-				WDT_reset();
 				mpu6050_get_FIFO_length(&size);
 				while(size>60){
 					sent = false;
@@ -148,13 +145,12 @@ int main (void){
 						radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
 						radio_buf[i+5]=(uint8_t)(z & 0xFF);
 					}
-					WDT_reset();
 					while (!sent){
 						sent = radio.TX_bytes(radio_buf, 48 , APPEND_DATA);
-						WDT_reset();
 					}
 					mpu6050_get_FIFO_length(&size);
 				}
+				wdt_set_to_8s();
 				radio.sleep();
 				WDT_reset();
 				mpu6050_FIFO_reset();
@@ -198,18 +194,16 @@ int main (void){
 				AnalogIn.disable();
 				sent = false;
 				// Set DR to 5, try to send on the highest and then decrease if fail.
-				WDT_reset();
+				WDT_off();
 				for (uint8_t DR = 6; DR > 0; DR--){
 					radio.set_DR(DR-1);
 					for (uint8_t i = 0; i<3;i++){
 						sent = radio.TX_bytes(radio_buf, 13, KEEP_ALIVE);
-						WDT_reset();
 						if (sent){break;}
 					}
 					if (sent){break;}
-					WDT_reset();
 				}
-				WDT_reset();
+				wdt_set_to_8s();
 				radio.sleep();
 				mpu6050_enable_motion_interrupt();
 				mpu6050_enable_pin_interrupt();
@@ -238,19 +232,15 @@ int main (void){
 						{
 						case TWO_G:
 							mpu6050_set_sensitivity(TWO_G);
-							printf("2G\n");
 							break;
 						case FOUR_G:
 							mpu6050_set_sensitivity(FOUR_G);
-							printf("4G\n");
 							break;
 						case EIGHT_G:
 							mpu6050_set_sensitivity(EIGHT_G);
-							printf("8G\n");
 							break;
 						case SIXTEEN_G:
 							mpu6050_set_sensitivity(SIXTEEN_G);
-							printf("16G\n");
 							break;
 						default:
 							break;
