@@ -81,9 +81,11 @@ int main (void){
 	Leds.toogle(GREEN);
 	Leds.toogle(RED);
 	radio.set_duty_cycle(0);
+	radio.set_DR(0);
 	radio.set_RX_window_size(1000);
 	radio.sleep();
 	WDT_reset();
+	mpu6050_reset();
 	mpu6050_init();
 	mpu6050_normalPower_mode();
 	mpu6050_set_sensitivity(TWO_G);
@@ -100,7 +102,7 @@ int main (void){
 	rtc.start_alarm();
 	cur_state = ALIVE_TRANSMIT;
 	Leds.toogle(RED);
-	wdt_reset();
+	WDT_reset();
 	while (true){
 		switch (cur_state){
 			case DATA_TRANSMIT:
@@ -129,12 +131,10 @@ int main (void){
 				radio_buf[6] = (uint8_t)temperature;
 				AnalogIn.disable();
 				sent = false;
-				WDT_reset();
+				WDT_off();
 				while (!sent){
 					sent = radio.TX_bytes(radio_buf, 7, EVENT);
-					WDT_reset();
 				}
-				WDT_reset();
 				mpu6050_get_FIFO_length(&size);
 				while(size>60){
 					sent = false;
@@ -147,13 +147,12 @@ int main (void){
 						radio_buf[i+4]=(uint8_t)((z>>8) & 0xFF);
 						radio_buf[i+5]=(uint8_t)(z & 0xFF);
 					}
-					WDT_reset();
 					while (!sent){
 						sent = radio.TX_bytes(radio_buf, 48 , APPEND_DATA);
-						WDT_reset();
 					}
 					mpu6050_get_FIFO_length(&size);
 				}
+				wdt_set_to_8s();
 				radio.sleep();
 				WDT_reset();
 				mpu6050_FIFO_reset();
@@ -197,18 +196,16 @@ int main (void){
 				AnalogIn.disable();
 				sent = false;
 				// Set DR to 5, try to send on the highest and then decrease if fail.
-				WDT_reset();
+				WDT_off();
 				for (uint8_t DR = 6; DR > 0; DR--){
-					radio.set_DR(DR-1);
+					//radio.set_DR(DR-1);
 					for (uint8_t i = 0; i<3;i++){
 						sent = radio.TX_bytes(radio_buf, 13, KEEP_ALIVE);
-						WDT_reset();
 						if (sent){break;}
 					}
 					if (sent){break;}
-					WDT_reset();
 				}
-				WDT_reset();
+				wdt_set_to_8s();
 				radio.sleep();
 				mpu6050_enable_motion_interrupt();
 				mpu6050_enable_pin_interrupt();
@@ -227,9 +224,12 @@ int main (void){
 					cur_state = ALIVE_TRANSMIT;
 				}
 				else if (radio.unread_downlink()){
+					mpu6050_disable_pin_interrupt();
+					mpu6050_normalPower_mode();
 					downlink_buf = radio.read_downlink_buf();
 					uint8_t port = radio.get_downlink_port();
 					if (port == 3){
+						printf("port %d PL %d\n", port, downlink_buf[0]);
 						mpu6050_set_interrupt_mot_thrshld(downlink_buf[0]);
 					}
 					else if (port == 5){
@@ -256,6 +256,8 @@ int main (void){
 						}
 						
 					}
+					mpu6050_lowPower_mode();
+					mpu6050_enable_pin_interrupt();
 				}
 				else{
 					cur_state = SLEEP;

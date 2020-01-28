@@ -402,7 +402,7 @@ void mpu6050_getConvTempData(int16_t*ta){
 void mpu6050_init_interrupt() {
 	/* Enable ext-interrupt ISR0: */
 	EICRA &= ~(1<<ISC00);
-	EICRA &= ~(1<<ISC01);
+	EICRA |= (1<<ISC11);
 	DDRD  |= (0<<2);
 	PORTD |= (0<<2);
 	MCUCR &= ~(1<<PUD);
