@@ -11,6 +11,7 @@ uint16_t val = 0;
 bool rdy = false;
 
 adc::adc(){
+	wdt_off();
 	value = &val;
 	ADMUX = (1<<REFS0);
 	ADCSRA = (1<<ADPS2)|(0<<ADPS1)|(0<<ADPS0) | (1<<ADIE);

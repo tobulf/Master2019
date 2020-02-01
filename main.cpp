@@ -53,7 +53,7 @@ adc AnalogIn;
 LED_driver Leds;
 RTC rtc;
 RN2483 radio;
-const uint8_t uplink_buf_length = 10;
+const uint8_t uplink_buf_length = 13;
 uint8_t uplink_buf[uplink_buf_length];
 uint8_t* downlink_buf;
 uint64_t new_timestamp;
@@ -65,16 +65,24 @@ uint64_t timestamp;
 bool print = false;
 bool sync = false;
 
+void disablePrint(){
+	PCICR &= ~(1<<PCIE3);
+}
+void enablePrint(){
+	PCICR |= (1<<PCIE3);
+}
 int main (void){
 	sei();
 	Leds.toogle(RED);
 	USART_init();
 	printf("Booting... \n");
 	//EEPROM_init();
-	joined = radio.init_OTAA(appEui,appKey);
+	joined = radio.init_OTAA(appEui, appKey, devEui);
 	radio.set_DR(5);
-	radio.set_duty_cycle(1, 0);
+	radio.set_duty_cycle(0);
 	radio.sleep();
+	rtc.set_alarm_period(60);
+	rtc.start_alarm();
 	Leds.toogle(RED);
 	EICRA |= (1<<ISC11);
 	EICRA |= (1<<ISC10);
@@ -88,7 +96,6 @@ int main (void){
 	//sei();
 	uint16_t dataadc = 0;
 	while (true){
-		dataadc = AnalogIn.get_battery_lvl();
 		//printf("Epoch: %lu \n", timestamp);
 		if (!sync){	
 			//printf("Bat %d \n", dataadc);
@@ -122,18 +129,18 @@ int main (void){
 			}
 		if (print){
 			print = false;
-			printf("Epoch: %lu us: %lu \n",sec,us);
+			printf("%lu, %lu\n",sec,us);
+			_delay_ms(1000);
+			enablePrint();
+		}
+		if (rtc.get_alarm_status()){
+			sync = false;
 		}
 		_delay_ms(1);
 		}
    }
 	
 
-ISR(INT0_vect){
-	threshold++;
-	printf("Gyro interrupt \n");
-	mpu6050_set_interrupt_thrshld(threshold);
-};
 
 ISR(INT1_vect){
 	if (sync){
@@ -144,6 +151,7 @@ ISR(INT1_vect){
 
 ISR(PCINT3_vect){
 	cli();
+	disablePrint();
 	timestamp = rtc.get_timestamp();
 	sei();
 	sec = timestamp / 1000000;

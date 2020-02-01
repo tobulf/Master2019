@@ -10,12 +10,15 @@
 
 uint32_t seconds = 0;
 uint16_t millis = 0;
-uint16_t millis_error = 0;
 uint16_t micros = 0;
 uint8_t OVF0 = 0;
 uint8_t cnt0 = 0;
 bool OVF2 = false;
 
+uint32_t alarm_start = 0;
+uint16_t alarm_period = 10000;
+bool alarm = false;
+bool alarm_active = false;
 
 RTC::RTC(){
 	/* initialize timer 0 */
@@ -59,7 +62,33 @@ uint32_t RTC::get_epoch(void){
 uint64_t RTC::get_timestamp(void){
 	uint64_t timestamp = ((uint64_t)seconds*1000000) +((uint32_t)millis*1000)+(micros);
 	return timestamp;
-}
+};
+void RTC::set_alarm_period(uint16_t period){
+	alarm_period = period;
+};
+void RTC::start_alarm(){
+	ATOMIC_BLOCK(ATOMIC_FORCEON){
+		alarm_active = true;
+	}
+};
+
+void RTC::stop_alarm(){
+	ATOMIC_BLOCK(ATOMIC_FORCEON){
+		alarm_active = false;
+	}
+};
+
+bool RTC::get_alarm_status(){
+	if (alarm){
+		ATOMIC_BLOCK(ATOMIC_FORCEON){
+			alarm = false;
+		}
+		return true;
+	}
+	else{
+		return false;
+	}
+};
 
 ISR(TIMER0_OVF_vect){
 	cli();
@@ -84,15 +113,26 @@ ISR(TIMER2_OVF_vect){
 	cli();
 	if (OVF2){
 		seconds++;
+		sei();
+		ATOMIC_BLOCK(ATOMIC_FORCEON){
 		millis = 0;
 		micros = 0;
 		OVF0 = 0;
 		cnt0 = 0;
 		OVF2 = false;
-		
+		}
+		if (alarm_active){
+			if((seconds - alarm_start) > alarm_period){
+				sleep_disable();
+				ATOMIC_BLOCK(ATOMIC_FORCEON){
+					alarm_start = seconds;
+					alarm = true;
+				}
+			}
+		}
 	}
 	else {
 		OVF2 = true;
+		sei();
 		}
-	sei();
 };

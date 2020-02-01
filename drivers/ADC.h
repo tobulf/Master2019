@@ -14,6 +14,7 @@
 #include <avr/sleep.h>
 #include <util/delay.h>
 #include <stdbool.h>
+#include "WDT.h"
 #include "power_management.h"
 
 /**

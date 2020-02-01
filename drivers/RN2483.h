@@ -21,8 +21,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <avr/wdt.h>
+
 #include "power_management.h"
 #include "WString.h"
+#include "WDT.h"
 
 
 
@@ -60,7 +63,7 @@ class LoRa_COM{
 	 * 
 	 * @param String command 
 	 */
-	void send_command(String command);
+	void send_command(String command, bool terminated = true);
 	/**
 	 * @brief Flush UART.
 	 * 
@@ -119,7 +122,7 @@ class RN2483: public LoRa_COM {
 	 * @return true 
 	 * @return false 
 	 */
-	bool init_OTAA(String app_EUI, String app_key);
+	bool init_OTAA(String app_EUI, String app_key, String dev_eui);
 	/**
 	 * @brief Set Datarate for the Transmission(0-5). SF12-SF7. 
 	 * 
@@ -136,7 +139,8 @@ class RN2483: public LoRa_COM {
 	 * @return true
 	 * @return false
 	 */
-	bool set_duty_cycle(uint8_t channel, uint16_t dcycle);
+	bool set_ch_duty_cycle(uint8_t channel, uint16_t dcycle);
+	bool set_duty_cycle(uint16_t dcycle);
 	/**
 	 * @brief Set the size of receive window 1.
 	 * 
@@ -163,6 +167,7 @@ class RN2483: public LoRa_COM {
 	
 	bool unread_downlink();
 	uint8_t* read_downlink_buf();
+	uint8_t get_downlink_port();
 	/**
 	 * @brief Set the RN2483 in sleep mode indefinitely if no arg passed or: min 100ms to 65s.
 	 * 
@@ -174,6 +179,7 @@ class RN2483: public LoRa_COM {
 	 * 
 	 */
 	void wake();
+	void print_dev_eui(void);
 	
 	private:
 	/**
@@ -185,6 +191,9 @@ class RN2483: public LoRa_COM {
 	String char_to_hex(uint8_t character);
 	uint8_t hex_string_to_byte(uint8_t* hex_string);
 	uint8_t buf[11];
+	uint8_t DL_port;
+	uint8_t cur_DR;
+	uint8_t failed;
 	bool new_msg;
 	
 	
