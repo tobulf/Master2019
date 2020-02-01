@@ -75,13 +75,13 @@ int main (void){
 	sei();
 	Leds.toogle(RED);
 	USART_init();
-	printf("Booting... \n");
+	/*printf("Booting... \n");*/
 	//EEPROM_init();
 	joined = radio.init_OTAA(appEui, appKey, devEui);
 	radio.set_DR(5);
 	radio.set_duty_cycle(0);
 	radio.sleep();
-	rtc.set_alarm_period(60);
+	rtc.set_alarm_period(10);
 	rtc.start_alarm();
 	Leds.toogle(RED);
 	EICRA |= (1<<ISC11);
@@ -121,7 +121,7 @@ int main (void){
 					sync = true;
 				}
 			}
-			printf("callback time: %lu \n", t_callback);
+			/*printf("callback time: %lu \n", t_callback);*/
 			callback_timer.stop();
 			callback_timer.reset();
 			Leds.toogle(GREEN);
@@ -145,7 +145,7 @@ int main (void){
 ISR(INT1_vect){
 	if (sync){
 		sync = false;
-		printf("Retry sync...\n");
+		/*printf("Retry sync...\n");*/
 	}
 };
 
