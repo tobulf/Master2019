@@ -53,7 +53,7 @@ adc AnalogIn;
 LED_driver Leds;
 RTC rtc;
 RN2483 radio;
-const uint8_t uplink_buf_length = 13;
+const uint8_t uplink_buf_length = 2;
 uint8_t uplink_buf[uplink_buf_length];
 uint8_t* downlink_buf;
 uint64_t new_timestamp;
@@ -64,7 +64,7 @@ uint32_t us;
 uint64_t timestamp;
 bool print = false;
 bool sync = false;
-
+bool can_print = false;
 void disablePrint(){
 	PCICR &= ~(1<<PCIE3);
 }
@@ -78,10 +78,10 @@ int main (void){
 	/*printf("Booting... \n");*/
 	//EEPROM_init();
 	joined = radio.init_OTAA(appEui, appKey, devEui);
-	radio.set_DR(5);
+	radio.set_DR(0);
 	radio.set_duty_cycle(0);
 	radio.sleep();
-	rtc.set_alarm_period(10);
+	rtc.set_alarm_period(20);
 	rtc.start_alarm();
 	Leds.toogle(RED);
 	EICRA |= (1<<ISC11);
@@ -90,8 +90,8 @@ int main (void){
 	PCICR |= (1<<PCIE3);
 	PCMSK3|= (1<<PCINT31);
 	PORTD |= (0<<3) | (0<<7);
-	
-	
+	DDRD |= (1<<DDB4);
+	PORTD &= ~(1<<DDB4);
 	/* Enable interrupts */
 	//sei();
 	uint16_t dataadc = 0;
@@ -119,6 +119,8 @@ int main (void){
 					convert_sync_response(downlink_buf, new_timestamp, t_callback);
 					rtc.set_time(new_timestamp);	
 					sync = true;
+					can_print = true;
+					PORTD |= (1<<DDB4);
 				}
 			}
 			/*printf("callback time: %lu \n", t_callback);*/
@@ -127,9 +129,11 @@ int main (void){
 			Leds.toogle(GREEN);
 			radio.sleep();
 			}
-		if (print){
+		if (print && can_print){
 			print = false;
+			can_print = false;
 			printf("%lu, %lu\n",sec,us);
+			PORTD &= ~(1<<DDB4);
 			_delay_ms(1000);
 			enablePrint();
 		}
