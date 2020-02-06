@@ -233,23 +233,24 @@ int main (void){
 						mpu6050_set_interrupt_mot_thrshld(downlink_buf[0]);
 					}
 					else if (port == 5){
+						printf("Config received on port %d\n", port);
 						switch (downlink_buf[0])
 						{
 						case TWO_G:
 							mpu6050_set_sensitivity(TWO_G);
-							printf("2G\n");
+							printf("Sensitivity set to 2G\n");
 							break;
 						case FOUR_G:
 							mpu6050_set_sensitivity(FOUR_G);
-							printf("4G\n");
+							printf("Sensitivity set to 4G\n");
 							break;
 						case EIGHT_G:
 							mpu6050_set_sensitivity(EIGHT_G);
-							printf("8G\n");
+							printf("Sensitivity set to 8G\n");
 							break;
 						case SIXTEEN_G:
 							mpu6050_set_sensitivity(SIXTEEN_G);
-							printf("16G\n");
+							printf("Sensitivity set to 16G\n");
 							break;
 						default:
 							break;
