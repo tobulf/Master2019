@@ -176,7 +176,7 @@ int main (void){
 				mpu6050_tempSensorEnabled();
 				mpu6050_getConvTempData(&temperature);
 				mpu6050_tempSensorDisabled();
-				mpu6050_getConvAccData(&x,&y,&z);
+				mpu6050_getRawAccData(&x,&y,&z);
 				alive_timestamp = rtc.get_epoch();
 				radio_buf[0]=(uint8_t)((alive_timestamp>>24) & 0xFF);
 				radio_buf[1]=(uint8_t)((alive_timestamp>>16) & 0xFF);
